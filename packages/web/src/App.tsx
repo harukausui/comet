@@ -92,10 +92,7 @@ function LiveApp() {
             />
 
             <div className="stamp-section">
-              <StampPicker
-                onSelectStamp={handleStampSelect}
-                disabled={!isConnected || isJoiningRoom}
-              />
+              <StampPicker onSelectStamp={handleStampSelect} />
             </div>
           </main>
 

@@ -3,6 +3,49 @@
     padding: 0;
     min-height: 200px;
   }
+
+  .stamp-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-md;
+  }
+
+  .stamp-section-actions {
+    display: flex;
+    gap: $space-xs;
+  }
+
+  .stamp-header-button {
+    padding: $space-xs $space-sm;
+    border: $border-width-thin solid $color-border;
+    border-radius: $radius-sm;
+    background-color: $color-bg-light;
+    color: $color-text-secondary;
+    font-weight: $font-semibold;
+    font-size: $font-xs;
+    white-space: nowrap;
+    transition:
+      border-color $transition-base,
+      background-color $transition-base,
+      color $transition-base;
+
+    &:hover:not(:disabled) {
+      border-color: $color-primary;
+      background-color: $color-bg-lighter;
+      color: $color-primary-dark;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($color-primary, 0.18);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: $opacity-disabled;
+    }
+  }
 }
 
 /* 絵文字ピッカーラッパー */
@@ -28,11 +71,11 @@
   }
 
   .epr-emoji-category-label {
-    font-size: $font-xs;
-    padding-left: $space-sm;
-    font-weight: $font-semibold;
     height: 24px;
+    padding-left: $space-sm;
     color: $color-text-primary;
+    font-weight: $font-semibold;
+    font-size: $font-xs;
   }
 
   .epr-emoji-category-content {
@@ -44,90 +87,21 @@
   }
 }
 
-/* 検索フィールド */
-.stamp-search {
-  position: relative;
-  padding: 15px 10px;
-  background-color: $color-bg-white;
-}
-
-.stamp-search-input {
-  width: 100%;
-  height: 40px;
-  padding: 0.625rem $space-md 0.625rem $space-md;
-  font-size: $font-sm;
-  color: $color-text-primary;
-  background-color: #f6f6f6;
-  border: none;
-  border-radius: $radius-lg;
-  outline: none;
-  transition: all $transition-base;
-}
-
-.stamp-search-input::placeholder {
-  color: #858585;
-}
-
-.stamp-search-input:focus {
-  background-color: $color-bg-white;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.stamp-search-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.stamp-search-clear {
-  position: absolute;
-  right: $space-lg;
-  top: 50%;
-  transform: translateY(-50%);
-  width: $space-lg;
-  height: $space-lg;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: $color-text-light;
-  font-size: $font-xl;
-  cursor: pointer;
-  border-radius: $radius-sm;
-  transition: all $transition-base;
-  padding: 0;
-}
-
-.stamp-search-clear:hover:not(:disabled) {
-  background-color: $color-border;
-  color: $color-text-secondary;
-}
-
-.stamp-search-clear:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 検索結果なし */
-.stamp-no-results {
+.emoji-picker-loading {
   padding: $space-xl $space-md;
-  text-align: center;
-  color: $color-text-light;
+  color: $color-text-muted;
   font-size: $font-sm;
+  text-align: center;
 }
 
+/* カスタムスタンプのグリッド（管理ダイアログで使用） */
 .stamp-grid {
   display: grid;
-  gap: $space-sm;
-  padding: $space-md;
   max-height: 400px;
-  overflow-y: auto;
+  padding: $space-md;
   overflow-x: hidden;
-}
-
-.emoji-grid {
-  grid-template-columns: repeat(8, 1fr);
+  overflow-y: auto;
+  gap: $space-sm;
 }
 
 .custom-stamps {
@@ -140,51 +114,25 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: $space-xs;
+  min-height: 0;
   padding: $space-sm;
-  background-color: $color-bg-white;
   border: $border-width solid $color-border;
   border-radius: $radius-lg;
-  cursor: pointer;
-  transition: all $transition-base;
+  background-color: $color-bg-white;
+  gap: $space-xs;
   aspect-ratio: 1;
-  min-height: 0;
-}
-
-.emoji-button {
-  padding: $space-sm;
-}
-
-.custom-stamp {
-  padding: $space-sm;
-}
-
-.stamp-button:hover:not(:disabled) {
-  background-color: $color-bg-lighter;
-  border-color: $color-border-light;
-  transform: scale(1.05);
-}
-
-.stamp-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.stamp-emoji {
-  font-size: $space-xl;
-  line-height: 1;
 }
 
 .stamp-label {
-  font-size: 0.625rem;
-  color: $color-text-muted;
-  text-align: center;
-  line-height: 1.2;
   /* 長い名前でセル幅を押し広げないよう省略表示にする */
   max-width: 100%;
-  white-space: nowrap;
   overflow: hidden;
+  color: $color-text-muted;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  text-align: center;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* スクロールバーのスタイリング */
@@ -197,15 +145,14 @@
 }
 
 .stamp-grid::-webkit-scrollbar-thumb {
-  background: $color-border-light;
   border-radius: 3px;
+  background: $color-border-light;
 }
 
 .stamp-grid::-webkit-scrollbar-thumb:hover {
   background: $color-text-light;
 }
 
-/* カスタムスタンプ用 */
 .custom-stamp-image {
   width: $space-xl;
   height: $space-xl;
@@ -227,62 +174,29 @@
   position: absolute;
   top: -$space-xs;
   right: -$space-xs;
-  width: 1.25rem;
-  height: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: $color-error;
-  color: $color-bg-white;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
   border: $border-width solid $color-bg-white;
   border-radius: 50%;
+  background-color: $color-error;
+  box-shadow: $shadow-sm;
+  color: $color-bg-white;
   font-size: $font-md;
   line-height: 1;
   cursor: pointer;
-  opacity: 0;
   transition: all $transition-base;
-  padding: 0;
-  box-shadow: $shadow-sm;
-}
-
-.stamp-button-wrapper:hover .stamp-delete-button {
-  opacity: 1;
-}
-
-.stamp-delete-button:hover:not(:disabled) {
-  background-color: $color-error-dark;
-  transform: scale(1.1);
-}
-
-.stamp-delete-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.stamp-loading {
-  padding: $space-md;
-  text-align: center;
-  color: $color-text-muted;
-  font-size: $font-sm;
-}
-
-/* 追加ボタン */
-.add-stamp-button {
-  background-color: $color-bg-light;
-  border: $border-width dashed $color-border-light;
-
-  .add-icon {
-    font-size: $space-xl;
-    color: $color-text-light;
-  }
 
   &:hover:not(:disabled) {
-    background-color: $color-bg-lighter;
-    border-color: $color-primary;
+    transform: scale(1.1);
+    background-color: $color-error-dark;
+  }
 
-    .add-icon {
-      color: $color-primary;
-    }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 }
-

@@ -1,0 +1,84 @@
+.stamp-dialog-overlay {
+  z-index: $z-modal;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-md;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.stamp-dialog-container {
+  width: 100%;
+  max-width: 560px;
+}
+
+.stamp-manage-dialog {
+  box-shadow: $shadow-xl;
+
+  .stamp-manage-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-md;
+  }
+
+  .stamp-manage-count {
+    color: $color-text-muted;
+    font-size: $font-xs;
+  }
+
+  .stamp-manage-empty {
+    padding: $space-xl $space-md;
+    color: $color-text-light;
+    font-size: $font-sm;
+    text-align: center;
+  }
+
+  .stamp-manage-grid {
+    padding: $space-xs;
+    max-height: 320px;
+  }
+
+  // 管理画面では削除が主目的なので、×を常時表示する
+  .stamp-delete-button {
+    opacity: 1;
+  }
+
+  .stamp-manage-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: $space-sm;
+    padding-top: $space-md;
+    border-top: $border-width-thin solid $color-border;
+  }
+
+  .stamp-manage-add,
+  .stamp-manage-close {
+    padding: $space-sm $space-md;
+    border: none;
+    border-radius: $radius-md;
+    font-weight: $font-semibold;
+    font-size: $font-sm;
+    transition: background-color $transition-base;
+  }
+
+  .stamp-manage-add {
+    background-color: $color-primary;
+    color: white;
+
+    &:hover {
+      background-color: $color-primary-dark;
+    }
+  }
+
+  .stamp-manage-close {
+    background-color: $color-bg-light;
+    color: $color-text-secondary;
+
+    &:hover {
+      background-color: $color-bg-lighter;
+    }
+  }
+}
