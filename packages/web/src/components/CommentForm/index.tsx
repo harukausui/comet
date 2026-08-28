@@ -13,6 +13,12 @@ import {
   COMMENT_ANIMATIONS,
 } from '@comet/shared';
 import { SectionBase } from '../common/SectionBase';
+import {
+  ANIMATION_LABELS,
+  COLOR_LABELS,
+  SIZE_LABELS,
+  SPEED_LABELS,
+} from '../../labels';
 import './style.scss';
 
 interface CommentFormProps {
@@ -160,7 +166,12 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
           <div className="form-group">
             <label>色</label>
             <div className="color-picker">
-              {Object.entries(COMMENT_COLORS).map(([name, value]) => (
+              {(
+                Object.entries(COMMENT_COLORS) as [
+                  keyof typeof COMMENT_COLORS,
+                  string,
+                ][]
+              ).map(([name, value]) => (
                 <button
                   key={value}
                   type="button"
@@ -168,7 +179,8 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
                   style={{ backgroundColor: value }}
                   onClick={() => setColor(value)}
                   disabled={disabled}
-                  title={name}
+                  title={COLOR_LABELS[name]}
+                  aria-label={COLOR_LABELS[name]}
                 />
               ))}
             </div>
@@ -185,7 +197,7 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
                   onClick={() => setSize(sizeOption)}
                   disabled={disabled}
                 >
-                  {sizeOption.charAt(0).toUpperCase() + sizeOption.slice(1)}
+                  {SIZE_LABELS[sizeOption]}
                 </button>
               ))}
             </div>
@@ -202,7 +214,7 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
                   onClick={() => setSpeedOption(speed)}
                   disabled={disabled}
                 >
-                  {speed.charAt(0).toUpperCase() + speed.slice(1)}
+                  {SPEED_LABELS[speed]}
                 </button>
               ))}
             </div>
@@ -219,7 +231,7 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
                   onClick={() => setAnimation(anim)}
                   disabled={disabled}
                 >
-                  {anim.charAt(0).toUpperCase() + anim.slice(1)}
+                  {ANIMATION_LABELS[anim]}
                 </button>
               ))}
             </div>
