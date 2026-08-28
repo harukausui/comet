@@ -6,14 +6,21 @@
   .form-row {
     display: flex;
     flex-direction: column;
-    margin-bottom: $space-md;
     gap: $space-md;
 
     @media (max-width: $breakpoint-sm) {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: $space-xs;
       gap: $space-sm;
+    }
+  }
+
+  .comment-input-row {
+    display: flex;
+    align-items: stretch;
+    gap: $space-sm;
+
+    .comment-input {
+      flex: 1;
+      min-width: 0;
     }
   }
 
@@ -138,9 +145,11 @@
   }
 
   .submit-button {
-    width: 100%;
-    padding: $space-sm;
+    flex-shrink: 0;
+    min-width: 96px;
+    padding: $space-sm $space-md;
     border: none;
+    white-space: nowrap;
     border-radius: $radius-sm;
     background-color: $color-primary;
     color: white;

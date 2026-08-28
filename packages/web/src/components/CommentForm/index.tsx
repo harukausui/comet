@@ -134,7 +134,8 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
   return (
     <SectionBase title="コメントフォーム" className="comment-form-section">
       <form className="comment-form" onSubmit={handleSubmit}>
-        <div className="form-group">
+        {/* 入力してすぐ送れるように、入力欄と送信ボタンを同じ行に置く */}
+        <div className="form-group comment-input-row">
           <input
             id="comment-input"
             type="text"
@@ -145,6 +146,14 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
             className="comment-input"
             maxLength={100}
           />
+          <button
+            type="submit"
+            disabled={disabled || !content.trim() || cooldownRemaining > 0}
+            className="submit-button"
+            aria-label="コメントを送信"
+          >
+            {cooldownRemaining > 0 ? `送信 (${cooldownRemaining}秒)` : '送信'}
+          </button>
         </div>
 
         <div className="form-row">
@@ -228,16 +237,6 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
             </label>
           </div>
         </div>
-
-        <button
-          type="submit"
-          disabled={disabled || !content.trim() || cooldownRemaining > 0}
-          className="submit-button"
-        >
-          {cooldownRemaining > 0
-            ? `コメントを送信 (${cooldownRemaining}秒)`
-            : 'コメントを送信'}
-        </button>
       </form>
     </SectionBase>
   );
