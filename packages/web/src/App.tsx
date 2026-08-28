@@ -65,22 +65,25 @@ function LiveApp() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="app-title">
-          <img className="comet-icon" src="comet-icon.png" alt="Comet Icon" />
-          Comet
-        </h1>
+        <div className="app-header-inner">
+          <h1 className="app-title">
+            <img className="comet-icon" src="comet-icon.png" alt="Comet Icon" />
+            Comet
+          </h1>
+
+          <RoomSelector
+            rooms={rooms}
+            currentRoom={currentRoom}
+            connected={isConnected}
+            disabled={!isConnected || isJoiningRoom}
+            onJoin={joinRoom}
+            onCreate={createRoom}
+            onRefresh={refreshRooms}
+          />
+        </div>
       </header>
 
       <div className="app-content">
-        <RoomSelector
-          rooms={rooms}
-          currentRoom={currentRoom}
-          disabled={!isConnected || isJoiningRoom}
-          onJoin={joinRoom}
-          onCreate={createRoom}
-          onRefresh={refreshRooms}
-        />
-
         <div className="app-content-main">
           <main className="app-main">
             <CommentForm
@@ -111,15 +114,17 @@ function App() {
   if (window.location.pathname === '/auth/extension') {
     return (
       <div className="app">
-        <header className="app-header compact-header">
-          <span className="app-title">
-            <img
-              className="comet-icon"
-              src="/comet-icon.png"
-              alt="Comet Icon"
-            />
-            Comet
-          </span>
+        <header className="app-header">
+          <div className="app-header-inner">
+            <span className="app-title">
+              <img
+                className="comet-icon"
+                src="/comet-icon.png"
+                alt="Comet Icon"
+              />
+              Comet
+            </span>
+          </div>
         </header>
         <ExtensionAuthPage />
       </div>
@@ -128,11 +133,13 @@ function App() {
   if (!window.location.pathname.startsWith('/history')) return <LiveApp />;
   return (
     <div className="app">
-      <header className="app-header compact-header">
-        <a className="app-title" href="/">
-          <img className="comet-icon" src="/comet-icon.png" alt="Comet Icon" />
-          Comet
-        </a>
+      <header className="app-header">
+        <div className="app-header-inner">
+          <a className="app-title" href="/">
+            <img className="comet-icon" src="/comet-icon.png" alt="Comet Icon" />
+            Comet
+          </a>
+        </div>
       </header>
       <HistoryPage />
     </div>

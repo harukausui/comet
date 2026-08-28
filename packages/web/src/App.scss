@@ -10,52 +10,69 @@
     padding: $space-sm $space-sm 50px;
   }
 
+  // 画面上部に固定されるアプリバー。左にロゴ、右にRoom操作ツールバーを配置する
   .app-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    z-index: $z-sticky;
+    position: sticky;
+    top: 0;
     width: 100%;
-    padding: 40px 0 $space-md;
-    gap: 40px;
+    margin-bottom: $space-lg;
+    border-bottom: $border-width-thin solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(51, 51, 51, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: white;
-    text-align: center;
 
     @media (max-width: $breakpoint-sm) {
-      padding: 14px 0;
+      position: static;
+      margin: -$space-sm (-$space-sm) $space-md;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .app-header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1200px;
+      min-height: 64px;
+      margin: 0 auto;
+      padding: $space-sm 0;
+      gap: $space-sm $space-lg;
+
+      @media (max-width: $breakpoint-sm) {
+        padding: $space-sm $space-sm $space-md;
+        gap: $space-sm;
+      }
     }
 
     .app-title {
       display: flex;
+      flex-shrink: 0;
       align-items: center;
-      justify-content: center;
       margin: 0;
-      gap: $space-md;
+      gap: $space-sm;
       font-weight: $font-bold;
-      font-size: 48px;
+      font-size: $font-xxxl;
       line-height: 1;
       font-family: 'Space Grotesk', sans-serif;
 
       @media (max-width: $breakpoint-sm) {
-        gap: $space-sm;
         font-size: $font-xxl;
       }
 
       .comet-icon {
-        width: 60px;
-        height: 60px;
-        animation: float 3s ease-in-out infinite;
+        width: 36px;
+        height: 36px;
+        animation: float-small 3s ease-in-out infinite;
 
         @media (max-width: $breakpoint-sm) {
           width: 30px;
           height: 30px;
-          animation: float-small 3s ease-in-out infinite;
         }
       }
-    }
-
-    &.compact-header {
-      padding-bottom: $space-lg;
-      gap: 0;
     }
   }
 
@@ -141,16 +158,6 @@
 
   &.error {
     border-color: $color-error;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
   }
 }
 

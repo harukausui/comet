@@ -3,7 +3,7 @@
 .status-toast {
   z-index: $z-modal;
   position: fixed;
-  top: $space-lg;
+  top: calc(64px + #{$space-md}); // stickyヘッダーに被らない位置
   left: 50%;
   min-width: 300px;
   padding: $space-md;
