@@ -20,6 +20,8 @@ export class StorageStack extends cdk.Stack {
   public readonly roomsTable: dynamodb.Table;
   public readonly roomEventsTable: dynamodb.Table;
   public readonly roomCapturesTable: dynamodb.Table;
+  public readonly pollsTable: dynamodb.Table;
+  public readonly pollVotesTable: dynamodb.Table;
   /** 認証チケット(JWT)の署名鍵。認証有効時のみ作成される */
   public readonly authSigningSecret?: secretsmanager.Secret;
 
@@ -42,7 +44,9 @@ export class StorageStack extends cdk.Stack {
         props.envName === 'prod'
           ? cdk.RemovalPolicy.RETAIN
           : cdk.RemovalPolicy.DESTROY,
-      pointInTimeRecovery: props.envName === 'prod', // 本番環境のみバックアップ
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: props.envName === 'prod', // 本番環境のみバックアップ
+      },
       timeToLiveAttribute: 'ttl', // TTLで自動削除
     });
 
@@ -103,7 +107,9 @@ export class StorageStack extends cdk.Stack {
         props.envName === 'prod'
           ? cdk.RemovalPolicy.RETAIN
           : cdk.RemovalPolicy.DESTROY,
-      pointInTimeRecovery: props.envName === 'prod',
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: props.envName === 'prod',
+      },
       timeToLiveAttribute: 'ttl',
     });
 
@@ -116,7 +122,28 @@ export class StorageStack extends cdk.Stack {
         props.envName === 'prod'
           ? cdk.RemovalPolicy.RETAIN
           : cdk.RemovalPolicy.DESTROY,
-      pointInTimeRecovery: props.envName === 'prod',
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: props.envName === 'prod',
+      },
+      timeToLiveAttribute: 'ttl',
+    });
+
+    // Roomごとに現在表示中の投票（実施中または結果表示中）を1件だけ保持する。
+    this.pollsTable = new dynamodb.Table(this, 'PollsTable', {
+      tableName: physicalName(this, props.envName, 'polls'),
+      partitionKey: { name: 'roomId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      timeToLiveAttribute: 'ttl',
+    });
+
+    // 匿名ブラウザごとの最終票。投票終了後はTTLで短期間のうちに削除する。
+    this.pollVotesTable = new dynamodb.Table(this, 'PollVotesTable', {
+      tableName: physicalName(this, props.envName, 'poll-votes'),
+      partitionKey: { name: 'pollId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'voterKey', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       timeToLiveAttribute: 'ttl',
     });
 

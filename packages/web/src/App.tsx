@@ -9,6 +9,19 @@ import type { CommentStyle, Stamp } from '@comet/shared';
 import './App.scss';
 import { HistoryPage } from './components/HistoryPage';
 import { ExtensionAuthPage } from './components/ExtensionAuthPage';
+import cometIconUrl from './assets/comet-icon.png';
+
+const REPOSITORY_URL = 'https://github.com/shimewtr/comet';
+
+function AppFooter() {
+  return (
+    <footer className="app-footer">
+      <a href={REPOSITORY_URL} target="_blank" rel="noreferrer">
+        Comet is open source on GitHub
+      </a>
+    </footer>
+  );
+}
 
 function LiveApp() {
   const {
@@ -67,7 +80,7 @@ function LiveApp() {
       <header className="app-header">
         <div className="app-header-inner">
           <h1 className="app-title">
-            <img className="comet-icon" src="comet-icon.png" alt="Comet Icon" />
+            <img className="comet-icon" src={cometIconUrl} alt="Comet Icon" />
             Comet
           </h1>
 
@@ -102,6 +115,7 @@ function LiveApp() {
         </div>
       </div>
 
+      <AppFooter />
       {toast && <StatusToast message={toast.message} onReconnect={reconnect} />}
     </div>
   );
@@ -116,7 +130,7 @@ function App() {
             <span className="app-title">
               <img
                 className="comet-icon"
-                src="/comet-icon.png"
+                src={cometIconUrl}
                 alt="Comet Icon"
               />
               Comet
@@ -124,6 +138,7 @@ function App() {
           </div>
         </header>
         <ExtensionAuthPage />
+        <AppFooter />
       </div>
     );
   }
@@ -133,12 +148,13 @@ function App() {
       <header className="app-header">
         <div className="app-header-inner">
           <a className="app-title" href="/">
-            <img className="comet-icon" src="/comet-icon.png" alt="Comet Icon" />
+            <img className="comet-icon" src={cometIconUrl} alt="Comet Icon" />
             Comet
           </a>
         </div>
       </header>
       <HistoryPage />
+      <AppFooter />
     </div>
   );
 }

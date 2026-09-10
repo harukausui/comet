@@ -1,5 +1,14 @@
 /// <reference lib="dom" />
-import { WebSocketMessage, WebSocketMessageType } from './types/index.js';
+import {
+  ClientWebSocketMessageType,
+  WebSocketMessage,
+  WebSocketMessageType,
+  WebSocketPayload,
+} from './types/index.js';
+import {
+  IncomingWebSocketMessage,
+  parseIncomingWebSocketMessage,
+} from './utils/websocket.js';
 
 /**
  * 接続状態
@@ -10,11 +19,7 @@ import { WebSocketMessage, WebSocketMessageType } from './types/index.js';
  * - failed: 再接続の上限に達した
  */
 export type CometSocketStatus =
-  | 'connecting'
-  | 'open'
-  | 'reconnecting'
-  | 'closed'
-  | 'failed';
+  'connecting' | 'open' | 'reconnecting' | 'closed' | 'failed';
 
 export interface CometSocketOptions {
   /** 再接続の最大試行回数（デフォルト: 5） */
@@ -33,9 +38,19 @@ export interface CometSocketOptions {
    * 返したトークンは接続URLの ?token= に付与される。nullなら付与しない
    */
   tokenProvider?: () => string | null | Promise<string | null>;
+  /** 匿名ブラウザ単位の投票識別子。接続URL以外のメッセージには含めない */
+  participantId?: string;
 }
 
-type MessageHandler<T> = (payload: T, message: WebSocketMessage) => void;
+type MessageHandler<T extends WebSocketMessageType> = (
+  payload: WebSocketPayload<T>,
+  message: IncomingWebSocketMessage<T>
+) => void;
+
+type UntypedMessageHandler = (
+  payload: unknown,
+  message: IncomingWebSocketMessage
+) => void;
 
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
 const DEFAULT_RECONNECT_BASE_DELAY_MS = 1000;
@@ -49,7 +64,10 @@ const SEND_WAIT_POLL_INTERVAL_MS = 50;
  */
 export class CometSocket {
   private ws: WebSocket | null = null;
-  private handlers = new Map<WebSocketMessageType, Set<MessageHandler<any>>>();
+  private handlers = new Map<
+    WebSocketMessageType,
+    Set<UntypedMessageHandler>
+  >();
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private keepaliveTimer: ReturnType<typeof setInterval> | null = null;
@@ -77,7 +95,7 @@ export class CometSocket {
     this.manuallyClosed = false;
     this.setStatus(this.reconnectAttempts > 0 ? 'reconnecting' : 'connecting');
 
-    // 認証有効時は接続URLにチケットを付与する
+    // 認証チケットと匿名参加者IDを接続URLに付与する
     let url = this.url;
     if (this.options.tokenProvider) {
       try {
@@ -88,6 +106,11 @@ export class CometSocket {
       } catch (error) {
         console.error('Failed to get auth token:', error);
       }
+    }
+    if (this.options.participantId) {
+      url += `${url.includes('?') ? '&' : '?'}participantId=${encodeURIComponent(
+        this.options.participantId
+      )}`;
     }
 
     return new Promise((resolve, reject) => {
@@ -106,12 +129,12 @@ export class CometSocket {
         };
 
         ws.onmessage = (event) => {
-          try {
-            const message: WebSocketMessage = JSON.parse(event.data);
-            this.dispatch(message);
-          } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+          const message = parseIncomingWebSocketMessage(event.data);
+          if (!message) {
+            console.error('Received an invalid WebSocket message');
+            return;
           }
+          this.dispatch(message);
         };
 
         ws.onerror = (event) => {
@@ -141,28 +164,40 @@ export class CometSocket {
    * メッセージハンドラーを登録する
    * @returns 登録解除する関数
    */
-  on<T>(type: WebSocketMessageType, handler: MessageHandler<T>): () => void {
+  on<T extends WebSocketMessageType>(
+    type: T,
+    handler: MessageHandler<T>
+  ): () => void {
     let set = this.handlers.get(type);
     if (!set) {
       set = new Set();
       this.handlers.set(type, set);
     }
-    set.add(handler);
+    const dispatchHandler: UntypedMessageHandler = (payload, message) => {
+      handler(
+        payload as WebSocketPayload<T>,
+        message as IncomingWebSocketMessage<T>
+      );
+    };
+    set.add(dispatchHandler);
 
     return () => {
-      set.delete(handler);
+      set.delete(dispatchHandler);
     };
   }
 
   /**
    * メッセージを送信する（未接続なら送信せずfalse）
    */
-  send(type: WebSocketMessageType, payload: unknown): boolean {
+  send<T extends ClientWebSocketMessageType>(
+    type: T,
+    payload: WebSocketPayload<T>
+  ): boolean {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       return false;
     }
 
-    const message: WebSocketMessage = {
+    const message: WebSocketMessage<WebSocketPayload<T>> = {
       type,
       payload,
       timestamp: Date.now(),
@@ -180,9 +215,9 @@ export class CometSocket {
   /**
    * 接続処理中なら完了を待ってから送信する
    */
-  async sendWhenOpen(
-    type: WebSocketMessageType,
-    payload: unknown,
+  async sendWhenOpen<T extends ClientWebSocketMessageType>(
+    type: T,
+    payload: WebSocketPayload<T>,
     timeoutMs = 3000
   ): Promise<boolean> {
     const startTime = Date.now();
@@ -257,7 +292,7 @@ export class CometSocket {
     }
   }
 
-  private dispatch(message: WebSocketMessage): void {
+  private dispatch(message: IncomingWebSocketMessage): void {
     const handlers = this.handlers.get(message.type);
     if (handlers) {
       handlers.forEach((handler) => handler(message.payload, message));

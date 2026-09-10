@@ -1,6 +1,23 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  expectTypeOf,
+  it,
+  vi,
+} from 'vitest';
 import { CometSocket, CometSocketStatus } from './comet-socket.js';
-import { WebSocketMessageType } from './types/index.js';
+import { NewCommentPayload, WebSocketMessageType } from './types/index.js';
+
+const commentPayload: NewCommentPayload = {
+  comment: {
+    id: '1',
+    content: 'hello',
+    timestamp: 0,
+    style: { color: '#fff', size: 'medium' },
+  },
+};
 
 /**
  * WebSocketのモック
@@ -84,10 +101,11 @@ describe('CometSocket', () => {
 
   it('購読したハンドラーにpayloadが届き、解除後は届かない', async () => {
     const socket = new CometSocket('wss://example.com');
-    const received: unknown[] = [];
-    const unsubscribe = socket.on(WebSocketMessageType.NEW_COMMENT, (p) =>
-      received.push(p)
-    );
+    const received: string[] = [];
+    const unsubscribe = socket.on(WebSocketMessageType.NEW_COMMENT, (payload) => {
+      expectTypeOf(payload).toEqualTypeOf<NewCommentPayload>();
+      received.push(payload.comment.content);
+    });
 
     const promise = socket.connect();
     latestWs().open();
@@ -95,23 +113,42 @@ describe('CometSocket', () => {
 
     latestWs().message({
       type: WebSocketMessageType.NEW_COMMENT,
-      payload: { comment: { id: '1' } },
+      payload: commentPayload,
       timestamp: 0,
     });
-    expect(received).toEqual([{ comment: { id: '1' } }]);
+    expect(received).toEqual(['hello']);
 
     unsubscribe();
     latestWs().message({
       type: WebSocketMessageType.NEW_COMMENT,
-      payload: { comment: { id: '2' } },
+      payload: {
+        ...commentPayload,
+        comment: { ...commentPayload.comment, id: '2', content: 'goodbye' },
+      },
       timestamp: 0,
     });
     expect(received).toHaveLength(1);
   });
 
+  it('不正なサーバーメッセージを購読ハンドラーへ渡さない', async () => {
+    const socket = new CometSocket('wss://example.com');
+    const handler = vi.fn();
+    socket.on(WebSocketMessageType.PONG, handler);
+
+    const promise = socket.connect();
+    latestWs().open();
+    await promise;
+
+    latestWs().onmessage?.({ data: '{not-json' });
+    latestWs().message({ type: 'unknown_message', payload: {} });
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith('Received an invalid WebSocket message');
+  });
+
   it('未接続時のsendはfalseを返す', () => {
     const socket = new CometSocket('wss://example.com');
-    expect(socket.send(WebSocketMessageType.NEW_COMMENT, {})).toBe(false);
+    expect(socket.send(WebSocketMessageType.NEW_COMMENT, commentPayload)).toBe(false);
   });
 
   it('sendWhenOpenは接続完了を待ってから送信する', async () => {
@@ -119,7 +156,7 @@ describe('CometSocket', () => {
     socket.connect().catch(() => {});
 
     const sendPromise = socket.sendWhenOpen(WebSocketMessageType.NEW_COMMENT, {
-      test: true,
+      ...commentPayload,
     });
 
     // 100ms後に接続完了させる
@@ -140,7 +177,7 @@ describe('CometSocket', () => {
 
     const sendPromise = socket.sendWhenOpen(
       WebSocketMessageType.NEW_COMMENT,
-      {},
+      commentPayload,
       3000
     );
     await vi.advanceTimersByTimeAsync(3500);
@@ -260,6 +297,21 @@ describe('CometSocket', () => {
     await promise;
 
     expect(latestWs().url).toBe('wss://example.com?token=ticket-123');
+  });
+
+  it('認証の有無に関係なく匿名参加者IDを接続URLへ付与する', async () => {
+    const socket = new CometSocket('wss://example.com?existing=true', {
+      tokenProvider: () => 'ticket-123',
+      participantId: 'participant 123',
+    });
+    const promise = socket.connect();
+    await vi.advanceTimersByTimeAsync(0);
+    latestWs().open();
+    await promise;
+
+    expect(latestWs().url).toBe(
+      'wss://example.com?existing=true&token=ticket-123&participantId=participant%20123'
+    );
   });
 
   it('keepaliveIntervalMsに0以下を指定するとPINGを送らない', async () => {

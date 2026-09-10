@@ -2,12 +2,16 @@
 
 # Dependencies
 node_modules/
+.pnpm-store/
 .pnp
 .pnp.js
 
 # Build outputs
 dist/
 build/
+.build/
+.swiftpm/
+DerivedData/
 *.tsbuildinfo
 
 # Environment variables
@@ -29,6 +33,7 @@ pnpm-debug.log*
 *.swp
 *.swo
 *~
+*.xcuserstate
 
 # OS files
 .DS_Store
@@ -53,9 +58,21 @@ temp/
 
 # Archives
 *.zip
+*.app/
+*.xcarchive/
+*.dSYM/
+
+# Apple code signing / notarization credentials
+*.p12
+*.cer
+*.provisionprofile
+*.mobileprovision
+AuthKey_*.p8
 
 # デプロイ先固有の設定（ドメイン・認証など）
 packages/cdk/comet.config.json
+packages/cdk/comet.config.*.json
+!packages/cdk/comet.config.example.json
 packages/cdk/cdk.context.json
 
 # Edge認証のデプロイ用ステージング（synth時に生成）

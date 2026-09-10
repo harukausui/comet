@@ -46,6 +46,8 @@ const webSocketStack = new WebSocketStack(app, `${stackPrefix}WebSocketStack`, {
   commentsTable: storageStack.commentsTable,
   roomsTable: storageStack.roomsTable,
   roomEventsTable: storageStack.roomEventsTable,
+  pollsTable: storageStack.pollsTable,
+  pollVotesTable: storageStack.pollVotesTable,
   authSigningSecret: storageStack.authSigningSecret,
 });
 
@@ -60,7 +62,7 @@ const historyStack = new HistoryStack(app, `${stackPrefix}HistoryStack`, {
 });
 
 // スタンプスタック（S3 + CloudFront + Lambda + DynamoDB）
-new StampStack(app, `${stackPrefix}StampStack`, {
+const stampStack = new StampStack(app, `${stackPrefix}StampStack`, {
   env,
   description: `Comet Stamp Storage & CDN - ${envName}`,
   envName,
@@ -85,6 +87,7 @@ new WebStack(app, `${stackPrefix}WebStack`, {
   envName,
   webSocketUrl: webSocketStack.webSocketUrl,
   historyApiUrl: historyStack.historyApiUrl,
+  stampApiUrl: stampStack.stampApiBaseUrl,
   authEnabled,
   domain: config.domain,
   auth: config.auth,

@@ -11,14 +11,29 @@
 import type {
   CloudFrontRequestEvent,
   CloudFrontRequestResult,
-  CloudFrontHeaders,
 } from 'aws-lambda';
-import { SignJWT, jwtVerify, createRemoteJWKSet } from 'jose';
+import {
+  CompactEncrypt,
+  SignJWT,
+  compactDecrypt,
+  createRemoteJWKSet,
+  jwtVerify,
+} from 'jose';
 import { createHash, randomBytes } from 'node:crypto';
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from '@aws-sdk/client-secrets-manager';
+import {
+  decodeRequestBody,
+  desktopCallbackURL,
+  desktopEncryptionKey,
+  DESKTOP_LOGOUT_CALLBACK_URL,
+  isBase64Url,
+  isSafeLocalPath,
+  matchesPKCEChallenge,
+} from './desktop-auth.js';
+import { clearCookie, cookie, jsonResponse, parseCookies, redirect } from './http.js';
 
 interface EdgeConfig {
   issuer: string;
@@ -30,7 +45,7 @@ interface EdgeConfig {
   signingSecretRegion: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const config: EdgeConfig = require('./config.json');
 
 const SESSION_COOKIE = 'comet_session';
@@ -38,11 +53,13 @@ const TXN_COOKIE = 'comet_txn';
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 const TXN_TTL_SECONDS = 10 * 60;
 const TICKET_TTL_SECONDS = 15 * 60;
+const DESKTOP_CODE_TTL_SECONDS = 2 * 60;
 
 const SESSION_ISSUER = 'comet-session';
 const TXN_ISSUER = 'comet-txn';
 // websocket-handler側のTICKET_ISSUERと一致させること
 const TICKET_ISSUER = 'comet-auth';
+const DESKTOP_CODE_ISSUER = 'comet-desktop-auth';
 
 interface OidcDiscovery {
   authorization_endpoint: string;
@@ -130,71 +147,6 @@ function base64url(buffer: Buffer): string {
   return buffer.toString('base64url');
 }
 
-function parseCookies(headers: CloudFrontHeaders): Record<string, string> {
-  const cookies: Record<string, string> = {};
-  for (const header of headers.cookie ?? []) {
-    for (const part of header.value.split(';')) {
-      const index = part.indexOf('=');
-      if (index > 0) {
-        cookies[part.slice(0, index).trim()] = part.slice(index + 1).trim();
-      }
-    }
-  }
-  return cookies;
-}
-
-function cookie(name: string, value: string, maxAgeSeconds: number): string {
-  return `${name}=${value}; Path=/; Max-Age=${maxAgeSeconds}; Secure; HttpOnly; SameSite=Lax`;
-}
-
-function clearCookie(name: string): string {
-  return cookie(name, '', 0);
-}
-
-function redirect(
-  location: string,
-  setCookies: string[] = []
-): CloudFrontRequestResult {
-  return {
-    status: '302',
-    statusDescription: 'Found',
-    headers: {
-      location: [{ key: 'Location', value: location }],
-      'cache-control': [{ key: 'Cache-Control', value: 'no-store' }],
-      ...(setCookies.length > 0
-        ? {
-            'set-cookie': setCookies.map((value) => ({
-              key: 'Set-Cookie',
-              value,
-            })),
-          }
-        : {}),
-    },
-  };
-}
-
-function jsonResponse(
-  status: number,
-  body: unknown,
-  setCookies: string[] = []
-): CloudFrontRequestResult {
-  return {
-    status: String(status),
-    headers: {
-      'content-type': [{ key: 'Content-Type', value: 'application/json' }],
-      'cache-control': [{ key: 'Cache-Control', value: 'no-store' }],
-      ...(setCookies.length > 0
-        ? {
-            'set-cookie': setCookies.map((value) => ({
-              key: 'Set-Cookie',
-              value,
-            })),
-          }
-        : {}),
-    },
-    body: JSON.stringify(body),
-  };
-}
 
 // ---- 認証フロー ----
 
@@ -339,7 +291,7 @@ async function handleCallback(
     .setExpirationTime(`${SESSION_TTL_SECONDS}s`)
     .sign(key);
 
-  const dest = txn.dest && txn.dest.startsWith('/') ? txn.dest : '/';
+  const dest = isSafeLocalPath(txn.dest) ? txn.dest : '/';
   return redirect(`https://${host}${dest}`, [
     cookie(SESSION_COOKIE, session, SESSION_TTL_SECONDS),
     clearCookie(TXN_COOKIE),
@@ -389,6 +341,84 @@ async function issueTicket(session: {
   return jsonResponse(200, { token, expiresAt });
 }
 
+async function startDesktopLogin(
+  host: string,
+  querystring: string,
+  cookies: Record<string, string>
+): Promise<CloudFrontRequestResult> {
+  const query = new URLSearchParams(querystring);
+  const state = query.get('state') ?? '';
+  const codeChallenge = query.get('code_challenge') ?? '';
+  if (!isBase64Url(state, 32, 128) || !isBase64Url(codeChallenge, 43, 128)) {
+    return jsonResponse(400, {
+      error: 'Invalid desktop authentication request',
+    });
+  }
+
+  const session = await verifySession(cookies);
+  if (!session) {
+    const destination = `/auth/desktop?${new URLSearchParams({
+      state,
+      code_challenge: codeChallenge,
+    }).toString()}`;
+    return await startLogin(host, destination);
+  }
+
+  const key = await getSigningKey();
+  const encryptionKey = desktopEncryptionKey(key);
+  const codePayload = JSON.stringify({
+    issuer: DESKTOP_CODE_ISSUER,
+    subject: session.sub,
+    codeChallenge,
+    expiresAt: Math.floor(Date.now() / 1000) + DESKTOP_CODE_TTL_SECONDS,
+  });
+  const code = await new CompactEncrypt(new TextEncoder().encode(codePayload))
+    .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+    .encrypt(encryptionKey);
+  return redirect(desktopCallbackURL(state, code));
+}
+
+async function exchangeDesktopCode(
+  request: CloudFrontRequestEvent['Records'][number]['cf']['request']
+): Promise<CloudFrontRequestResult> {
+  if (request.method !== 'POST') {
+    return jsonResponse(405, { error: 'Method not allowed' });
+  }
+  const params = new URLSearchParams(decodeRequestBody(request.body));
+  const code = params.get('code') ?? '';
+  const verifier = params.get('code_verifier') ?? '';
+  if (!code || !isBase64Url(verifier, 43, 128)) {
+    return jsonResponse(400, { error: 'Invalid code exchange request' });
+  }
+
+  try {
+    const key = await getSigningKey();
+    const encryptionKey = desktopEncryptionKey(key);
+    const { plaintext } = await compactDecrypt(code, encryptionKey, {
+      keyManagementAlgorithms: ['dir'],
+      contentEncryptionAlgorithms: ['A256GCM'],
+    });
+    const payload = JSON.parse(new TextDecoder().decode(plaintext)) as {
+      issuer?: string;
+      subject?: string;
+      codeChallenge?: string;
+      expiresAt?: number;
+    };
+    if (
+      payload.issuer !== DESKTOP_CODE_ISSUER ||
+      typeof payload.subject !== 'string' ||
+      typeof payload.expiresAt !== 'number' ||
+      payload.expiresAt <= Math.floor(Date.now() / 1000) ||
+      !matchesPKCEChallenge(verifier, payload.codeChallenge)
+    ) {
+      return jsonResponse(401, { error: 'PKCE verification failed' });
+    }
+    return await issueTicket({ sub: payload.subject });
+  } catch {
+    return jsonResponse(401, { error: 'Invalid or expired desktop code' });
+  }
+}
+
 // ---- エントリーポイント ----
 
 export const handler = async (
@@ -404,7 +434,20 @@ export const handler = async (
     }
 
     if (request.uri === '/auth/logout') {
-      return redirect(`https://${host}/`, [clearCookie(SESSION_COOKIE)]);
+      const logoutQuery = new URLSearchParams(request.querystring);
+      const destination =
+        logoutQuery.get('desktop') === '1'
+          ? DESKTOP_LOGOUT_CALLBACK_URL
+          : `https://${host}/`;
+      return redirect(destination, [clearCookie(SESSION_COOKIE)]);
+    }
+
+    if (request.uri === '/auth/desktop') {
+      return await startDesktopLogin(host, request.querystring, cookies);
+    }
+
+    if (request.uri === '/auth/desktop/token') {
+      return await exchangeDesktopCode(request);
     }
 
     const session = await verifySession(cookies);

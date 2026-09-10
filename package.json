@@ -2,7 +2,9 @@
   "name": "comet",
   "version": "0.1.0",
   "private": true,
-  "description": "Niconicoment-style real-time comment system",
+  "license": "MIT",
+  "packageManager": "pnpm@10.34.5",
+  "description": "Real-time audience comment overlay system",
   "workspaces": [
     "packages/*",
     "packages/api/*"
@@ -11,19 +13,21 @@
     "build": "pnpm -r build",
     "build:shared": "pnpm --filter @comet/shared build",
     "dev": "pnpm -r --parallel dev",
-    "test": "pnpm -r test",
-    "lint": "pnpm -r lint",
+    "test": "node --test scripts/*.test.mjs && pnpm -r test",
+    "lint": "eslint packages scripts --ext .ts,.tsx,.js,.mjs,.cjs --max-warnings 0 && pnpm --filter @comet/web lint",
     "clean": "pnpm -r clean"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
+    "@types/node": "^24.0.0",
     "eslint": "^8.56.0",
-    "prettier": "^3.1.0",
-    "prettier-plugin-css-order": "^2.1.2",
+    "prettier": "^3.9.6",
+    "prettier-plugin-css-order": "^2.2.0",
     "typescript": "^5.3.0"
   },
   "engines": {
-    "node": ">=22.0.0",
-    "pnpm": ">=8.0.0"
+    "node": ">=24.0.0 <25.0.0",
+    "pnpm": ">=10.0.0 <11.0.0"
   }
 }

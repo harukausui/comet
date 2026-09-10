@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { type Stamp } from '@comet/shared';
-import { authHeaders } from '../../auth';
+import { authHeaders, loadRuntimeConfig } from '../../auth';
 import { SectionBase } from '../common/SectionBase';
 import { UploadDialog } from './UploadDialog';
 import { ManageDialog } from './ManageDialog';
@@ -13,7 +13,22 @@ interface StampPickerProps {
   onSelectStamp: (stamp: Stamp) => void;
 }
 
-const STAMPS_API_URL = `${import.meta.env.VITE_STAMP_API_URL}/stamps`;
+async function stampApiUrl(path: string): Promise<string> {
+  const runtimeConfig = await loadRuntimeConfig();
+  const baseUrl =
+    runtimeConfig.stampApiUrl || import.meta.env.VITE_STAMP_API_URL;
+  if (!baseUrl) {
+    throw new Error('スタンプAPI URLが設定されていません');
+  }
+  return `${baseUrl.replace(/\/$/, '')}${path}`;
+}
+
+async function errorMessage(response: Response, fallback: string) {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) return fallback;
+  const data = (await response.json().catch(() => ({}))) as { error?: string };
+  return data.error || fallback;
+}
 
 // スタンプの追加・管理はHTTP APIで完結するため、WebSocketの接続状態には依存させない
 export function StampPicker({ onSelectStamp }: StampPickerProps) {
@@ -24,7 +39,7 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
 
   const fetchCustomStamps = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(STAMPS_API_URL, {
+      const response = await fetch(await stampApiUrl('/stamps'), {
         signal,
         headers: await authHeaders(),
       });
@@ -60,17 +75,19 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
     }
 
     try {
-      const response = await fetch(`${STAMPS_API_URL}/${stampId}`, {
-        method: 'DELETE',
-        headers: await authHeaders(),
-      });
+      const response = await fetch(
+        await stampApiUrl(`/stamps/${encodeURIComponent(stampId)}`),
+        {
+          method: 'DELETE',
+          headers: await authHeaders(),
+        }
+      );
 
       if (response.ok) {
         setCustomStamps((prev) => prev.filter((s) => s.id !== stampId));
       } else {
-        const data = await response.json();
-        const errorMessage = data.error || '不明なエラー';
-        alert(`削除に失敗しました: ${errorMessage}`);
+        const message = await errorMessage(response, '不明なエラー');
+        alert(`削除に失敗しました: ${message}`);
       }
     } catch (error) {
       console.error('Failed to delete stamp:', error);
@@ -82,9 +99,7 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
     setUploading(true);
 
     try {
-      const UPLOAD_API_URL = `${import.meta.env.VITE_STAMP_API_URL}/upload`;
-
-      const response = await fetch(UPLOAD_API_URL, {
+      const response = await fetch(await stampApiUrl('/upload'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,10 +114,9 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage =
-          errorData.error || 'アップロードURLの取得に失敗しました';
-        throw new Error(errorMessage);
+        throw new Error(
+          await errorMessage(response, 'アップロードURLの取得に失敗しました')
+        );
       }
 
       const { uploadUrl, stampId } = await response.json();
@@ -121,7 +135,7 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
 
       // アップロード完了をサーバに通知してスタンプを有効化する
       const confirmResponse = await fetch(
-        `${STAMPS_API_URL}/${stampId}/confirm`,
+        await stampApiUrl(`/stamps/${encodeURIComponent(stampId)}/confirm`),
         { method: 'POST', headers: await authHeaders() }
       );
 
