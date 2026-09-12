@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { type Stamp } from '@comet/shared';
 import { authHeaders, loadRuntimeConfig } from '../../auth';
 import { SectionBase } from '../common/SectionBase';
+import { GearIcon } from '../../assets/icons/GearIcon';
 import { UploadDialog } from './UploadDialog';
 import { ManageDialog } from './ManageDialog';
 import './style.scss';
@@ -178,11 +179,12 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
               </button>
               <button
                 type="button"
-                className="stamp-header-button"
+                className="stamp-header-button stamp-header-icon-button"
                 onClick={() => setShowManageDialog(true)}
+                aria-label="カスタムスタンプを管理"
                 title="カスタムスタンプを管理"
               >
-                管理
+                <GearIcon />
               </button>
             </div>
           </div>

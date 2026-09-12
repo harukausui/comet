@@ -1,7 +1,7 @@
 .stamp-picker {
   .section-content {
-    padding: 0;
     min-height: 200px;
+    padding: 0;
   }
 
   .stamp-section-title {
@@ -20,7 +20,7 @@
     padding: $space-xs $space-sm;
     border: $border-width-thin solid $color-border;
     border-radius: $radius-sm;
-    background-color: $color-bg-light;
+    background-color: $color-bg-white;
     color: $color-text-secondary;
     font-weight: $font-semibold;
     font-size: $font-xs;
@@ -32,13 +32,13 @@
 
     &:hover:not(:disabled) {
       border-color: $color-primary;
-      background-color: $color-bg-lighter;
+      background-color: $color-primary-soft;
       color: $color-primary-dark;
     }
 
     &:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba($color-primary, 0.18);
+      box-shadow: $shadow-focus;
     }
 
     &:disabled {
@@ -46,11 +46,34 @@
       opacity: $opacity-disabled;
     }
   }
+
+  // 歯車などアイコンだけのヘッダーボタン。テキストボタンと高さを揃えて正方形にする
+  .stamp-header-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: $space-xs;
+
+    svg {
+      display: block;
+    }
+  }
 }
 
 /* 絵文字ピッカーラッパー */
 .emoji-picker-wrapper {
   --epr-search-input-padding: 0;
+  // ピッカー（内側スクロール領域を含む）の高さ。
+  // モバイル幅ではページと入れ子のスクロールになるため、低くして区切られたパネルとして見せる
+  --stamp-picker-height: 400px;
+
+  @media (max-width: $breakpoint-sm) {
+    --stamp-picker-height: 300px;
+  }
+
+  // カテゴリナビの下余白。選択中タブの下線（category-underline）の位置と共有する
+  $stamp-nav-padding-bottom: $space-xs;
 
   .epr-main {
     border: none;
@@ -59,27 +82,255 @@
   .epr-search-container {
     input {
       padding: 0.625rem $space-md 0.625rem $space-md;
+      transition:
+        border-color $transition-base,
+        background-color $transition-base,
+        box-shadow $transition-base;
+
+      &:focus {
+        box-shadow: $shadow-focus;
+      }
     }
+  }
+
+  // 検索欄は検索タブ（先頭タブ）を選択中だけ表示する。
+  // 検索語が入力されている間はタブを離れられないので、その間も出し続ける
+  .unified-picker:not(.is-search-tab)
+    .EmojiPickerReact:not(.epr-search-active)
+    .epr-search-container {
+    display: none;
   }
 
   .epr-icn-search {
     background-image: none !important;
   }
 
+  // Slackと同じく「カテゴリナビ → 検索」の順に並べる
+  // （ライブラリは検索→ナビの固定順なので、flexで上下を反転する）
+  .epr-header {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  // タブ（カテゴリナビ）。選択中タブの下線が下端の区切り線にちょうど重なるよう、
+  // 下余白は下線の位置と同じ変数で決める
   .epr-category-nav {
-    padding: $space-sm 0;
+    padding: $space-sm $space-sm $stamp-nav-padding-bottom;
+    border-bottom: $border-width-thin solid $color-border;
+  }
+
+  // 選択中カテゴリを示すSlack風の下線
+  @mixin category-underline {
+    position: absolute;
+    right: -2px;
+    // ボタン下端 → ナビの下余白 → 区切り線(1px) の位置に 2px の線を置き、線を区切り線に重ねる
+    bottom: calc(-1 * #{$stamp-nav-padding-bottom} - #{$border-width-thin});
+    left: -2px;
+    height: 2px;
+    border-radius: 2px;
+    background-color: $color-primary;
+    content: '';
+  }
+
+  // ---- 絵文字グリッドの余白とボタンの見た目 ----
+  // ライブラリは仮想化のため、各絵文字を inline style の position:absolute; left/top で
+  // 「連番 × セル幅」の位置に並べる（セル幅 = ボタンの clientHeight、列数 = ul の clientWidth ÷ セル幅）。
+  // grid の gap や padding は効かないので、隙間は「セルの中でカードを内側に描く」ことで作り、
+  // 左右の内側余白は ul の border（clientWidth を狭める）で作る
+  $emoji-card-inset: $space-xs; // セル内でカードを内側に寄せる量（4px）。隣のカードとの隙間はこの2倍
+
+  // タブのアイコンは categoryIcons.tsx の線画（currentColor）。
+  // 未選択は補助テキスト色、ホバー・選択中はブルー＋淡いブルー背景で示す
+  @mixin category-tab-active {
+    background-color: $color-primary-soft;
+    color: $color-primary;
+
+    .epr-cat-icon-image {
+      opacity: 1;
+    }
+  }
+
+  .epr-cat-btn {
+    // ライブラリのカスタムアイコン用の flex 指定が効かず左寄せになるので、ここで中央寄せする
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: $radius-sm;
+    color: $color-text-muted;
+    transition:
+      color $transition-base,
+      background-color $transition-base;
+
+    svg {
+      display: block;
+    }
+
+    // Comet アイコン画像は色を変えられないので、濃淡で未選択／選択中を表す
+    .epr-cat-icon-image {
+      display: block;
+      opacity: 0.55;
+      transition: opacity $transition-base;
+    }
+
+    &:hover {
+      @include category-tab-active;
+    }
+
+    &.epr-active {
+      @include category-tab-active;
+
+      &::after {
+        @include category-underline;
+      }
+    }
+  }
+
+  // 検索タブ選択中は、スクロール位置由来の選択表示を消して検索タブ側に出す
+  .is-search-tab .epr-cat-btn {
+    &.epr-active {
+      background-color: transparent;
+      color: $color-text-muted;
+
+      .epr-cat-icon-image {
+        opacity: 0.55;
+      }
+
+      &::after {
+        content: none;
+      }
+
+      &:hover {
+        @include category-tab-active;
+      }
+    }
+
+    // 検索タブ本体（アイコンのマーカークラスで特定。categoryIcons.tsx 参照）
+    &:has(.stamp-tab-icon-search) {
+      @include category-tab-active;
+
+      &::after {
+        @include category-underline;
+      }
+    }
+  }
+
+  // カスタムセクションを常に出すためのプレースホルダー（UnifiedPicker 参照）は描画しない
+  .epr-emoji[data-unified='__custom_placeholder__'] {
+    display: none;
+  }
+
+  // 末尾の「カスタム」は短いので、そのままだとタブを押しても直前の「旗」が先頭に残る。
+  // スクロール領域（.epr-body）の高さぶん最小高さを確保し、先頭までスクロールできるようにする
+  .epr-body {
+    container-type: size;
+  }
+
+  .EmojiPickerReact:not(.epr-search-active) li[data-name='custom'] {
+    min-height: 100cqh;
+  }
+
+  // カスタムスタンプが0件（プレースホルダーのみ）のときの案内。
+  // カテゴリ本体はgridかつ高さ0になるので、li 自体の ::after として全幅で出す
+  li[data-name='custom']:not(
+      :has(.epr-emoji:not([data-unified='__custom_placeholder__']))
+    )::after {
+    display: block;
+    padding: $space-sm $space-sm $space-lg;
+    content: 'カスタムスタンプはまだありません。右上の「＋ 追加」から登録できます。';
+    color: $color-text-muted;
+    font-size: $font-sm;
   }
 
   .epr-emoji-category-label {
     height: 24px;
-    padding-left: $space-sm;
+    // ul の border と合わせて、文字の左端がカード・検索欄と揃う
+    padding-left: $emoji-card-inset;
     color: $color-text-primary;
     font-weight: $font-semibold;
     font-size: $font-xs;
   }
 
+  .EmojiPickerReact {
+    // ライブラリは .EmojiPickerReact 自身に変数を定義しているので、同じ要素で上書きする。
+    // ホバー・フォーカス色はセル全体に塗られてしまうため無効化し、カード側（::before）で表現する
+    --epr-emoji-hover-color: transparent;
+    --epr-focus-bg-color: transparent;
+    // 検索欄・見出し・フォーカス表示をアプリの配色に合わせる
+    --epr-bg-color: #{$color-bg-white};
+    --epr-text-color: #{$color-text-primary};
+    --epr-category-label-text-color: #{$color-text-primary};
+    --epr-category-label-bg-color: #{$color-bg-white};
+    --epr-category-icon-active-color: #{$color-primary};
+    --epr-highlight-color: #{$color-primary};
+    --epr-search-input-bg-color: #{$color-bg-light};
+    --epr-search-input-bg-color-active: #{$color-bg-white};
+    --epr-search-input-text-color: #{$color-text-primary};
+    --epr-search-input-placeholder-color: #{$color-text-muted};
+    --epr-search-border-color: #{$color-border};
+    --epr-search-border-color-active: #{$color-primary};
+    // セル幅 = size + padding * 2。カードの inset ぶんも含めて絵文字の周りに余白を取る。
+    // スタンプ選択はこの画面のメイン機能なので、絵文字はやや大きめ（32px、カードは48px）にする
+    --epr-emoji-size: 32px;
+    --epr-emoji-padding: #{$space-sm + $emoji-card-inset};
+  }
+
+  // 見出しの文字・検索欄（--epr-horizontal-padding）・カードの左端を一直線に揃える
+  .epr-emoji-list {
+    border-right: calc(var(--epr-horizontal-padding) - #{$emoji-card-inset})
+      solid transparent;
+    border-left: calc(var(--epr-horizontal-padding) - #{$emoji-card-inset})
+      solid transparent;
+  }
+
+  // カテゴリ間の余白（絶対配置の子には上側の padding が効かないので下だけ）
   .epr-emoji-category-content {
     margin: 0;
+    padding-bottom: $space-sm;
+  }
+
+  // 絵文字・カスタムスタンプは押せるボタンだと分かるよう、他のボタンと同じカード状にする。
+  // ボタン自体の位置・サイズはライブラリが決めるので、カード本体は ::before で内側に描く
+  .epr-emoji {
+    overflow: visible;
+    isolation: isolate;
+    transition: transform $transition-fast;
+
+    &::before {
+      z-index: -1;
+      position: absolute;
+      inset: $emoji-card-inset;
+      border-radius: $radius-md;
+      background-color: $color-bg-light;
+      box-shadow:
+        inset 0 0 0 $border-width-thin $color-border,
+        $shadow-sm;
+      content: '';
+      transition:
+        box-shadow $transition-fast,
+        background-color $transition-fast;
+    }
+
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-1px);
+
+      &::before {
+        background-color: $color-primary-soft;
+        box-shadow:
+          inset 0 0 0 $border-width-thin rgba($color-primary, 0.35),
+          $shadow-md;
+      }
+    }
+
+    &:active {
+      transform: none;
+
+      &::before {
+        box-shadow:
+          inset 0 0 0 $border-width-thin rgba($color-primary, 0.35),
+          $shadow-sm;
+      }
+    }
   }
 
   aside {
@@ -114,13 +365,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1;
   min-height: 0;
   padding: $space-sm;
-  border: $border-width solid $color-border;
+  gap: $space-xs;
+  border: $border-width-thin solid $color-border;
   border-radius: $radius-lg;
   background-color: $color-bg-white;
-  gap: $space-xs;
-  aspect-ratio: 1;
 }
 
 .stamp-label {
@@ -171,10 +422,10 @@
 }
 
 .stamp-delete-button {
+  display: flex;
   position: absolute;
   top: -$space-xs;
   right: -$space-xs;
-  display: flex;
   align-items: center;
   justify-content: center;
   width: 1.25rem;
