@@ -13,10 +13,68 @@
     }
   }
 
+  // 職人設定: 色・サイズ・速度・アニメーション・盛り上げモードの折りたたみ
+  .artisan-settings {
+    border: $border-width-thin solid $color-border;
+    border-radius: $radius-md;
+    background-color: $color-bg-light;
+
+    .artisan-settings-summary {
+      display: flex;
+      align-items: center;
+      padding: $space-sm $space-md;
+      gap: $space-sm;
+      color: $color-text-secondary;
+      font-weight: $font-semibold;
+      font-size: $font-sm;
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      &::before {
+        display: inline-block;
+        width: 0.4em;
+        height: 0.4em;
+        transform: rotate(-45deg);
+        border-right: $border-width solid currentColor;
+        border-bottom: $border-width solid currentColor;
+        content: '';
+        transition: transform $transition-base;
+      }
+
+      &:hover {
+        color: $color-text-primary;
+      }
+
+      &:focus-visible {
+        border-radius: $radius-md;
+        outline: $border-width solid $color-primary;
+        outline-offset: -$border-width;
+      }
+    }
+
+    &[open] .artisan-settings-summary::before {
+      transform: rotate(45deg);
+    }
+
+    > .form-row {
+      padding: 0 $space-md $space-md;
+    }
+  }
+
+  // コメント投稿がこの画面のメイン機能なので、入力欄と送信ボタンはひと回り大きくする
   .comment-input-row {
     display: flex;
     align-items: stretch;
-    gap: $space-sm;
+    gap: $space-md;
+
+    @media (max-width: $breakpoint-sm) {
+      gap: $space-sm;
+    }
 
     .comment-input {
       flex: 1;
@@ -43,28 +101,64 @@
       input[type='checkbox'] {
         width: 18px;
         height: 18px;
+        accent-color: $color-primary;
         cursor: pointer;
+      }
+    }
+
+    &.persist-toggle {
+      padding-top: $space-sm;
+      border-top: $border-width-thin solid $color-border;
+
+      .toggle-label {
+        margin-bottom: 0;
+        color: $color-text-primary;
+        font-weight: $font-semibold;
+        font-size: $font-sm;
+      }
+
+      .persist-hint {
+        margin: $space-xs 0 0;
+        color: $color-text-muted;
+        font-size: $font-xs;
       }
     }
 
     .comment-input {
       box-sizing: border-box;
       width: 100%;
-      padding: $space-sm;
+      min-height: $button-height-lg;
+      padding: $space-sm $space-md;
       border: $border-width solid $color-border;
-      border-radius: $radius-sm;
-      background-color: $color-bg-white;
+      border-radius: $radius-md;
+      background-color: $color-bg-light;
       color: $color-text-primary;
-      font-size: $font-md;
-      transition: border-color $transition-base;
+      font-size: $font-lg;
+      transition:
+        border-color $transition-base,
+        background-color $transition-base,
+        box-shadow $transition-base;
+
+      @media (max-width: $breakpoint-sm) {
+        min-height: $button-height-md;
+        padding: $space-sm;
+        font-size: $font-md;
+      }
+
+      &::placeholder {
+        color: $color-text-muted;
+      }
 
       &:focus {
         border-color: $color-primary;
         outline: none;
+        background-color: $color-bg-white;
+        box-shadow: $shadow-focus;
       }
 
       &:disabled {
-        background-color: $color-bg-light;
+        background-color: $color-bg-lighter;
+        color: $color-text-disabled;
         cursor: not-allowed;
       }
     }
@@ -85,7 +179,7 @@
 
         &.selected {
           border: 3px solid $color-primary;
-          box-shadow: 0 0 0 2px rgba($color-primary, 0.3);
+          box-shadow: $shadow-focus;
         }
 
         &:hover:not(:disabled) {
@@ -113,7 +207,8 @@
         padding: $space-sm 0;
         border: $border-width solid $color-border;
         border-radius: $radius-sm;
-        background-color: $color-bg-light;
+        background-color: $color-bg-white;
+        color: $color-text-secondary;
         font-weight: $font-medium;
         font-size: $font-sm;
         cursor: pointer;
@@ -121,7 +216,8 @@
 
         &:hover:not(:disabled) {
           border-color: $color-border-light;
-          background-color: $color-bg-lighter;
+          background-color: $color-primary-soft;
+          color: $color-primary-dark;
         }
 
         &:disabled {
@@ -129,15 +225,16 @@
           opacity: $opacity-disabled;
         }
 
+        // 選択中は淡いブルー背景＋ブルーの枠と文字で示す
         &.selected {
           border-color: $color-primary;
-          background-color: $color-primary;
-          color: white;
+          background-color: $color-primary-soft;
+          color: $color-primary-dark;
 
           &:hover {
             border-color: $color-primary;
-            background-color: $color-primary;
-            color: white;
+            background-color: $color-primary-soft;
+            color: $color-primary-dark;
           }
         }
       }
@@ -146,27 +243,38 @@
 
   .submit-button {
     flex-shrink: 0;
-    min-width: 96px;
-    padding: $space-sm $space-md;
+    min-width: $button-width-lg;
+    min-height: $button-height-lg;
+    padding: $space-sm $space-lg;
     border: none;
-    white-space: nowrap;
-    border-radius: $radius-sm;
+    border-radius: $radius-md;
     background-color: $color-primary;
-    color: white;
+    color: $color-bg-white;
     font-weight: $font-semibold;
-    font-size: $font-md;
+    font-size: $font-lg;
+    white-space: nowrap;
+
+    @media (max-width: $breakpoint-sm) {
+      min-width: $button-width-md;
+      min-height: $button-height-md;
+      padding: $space-sm $space-md;
+      font-size: $font-md;
+    }
     cursor: pointer;
     transition:
       transform $transition-base,
+      background-color $transition-base,
       box-shadow $transition-base;
 
     &:hover:not(:disabled) {
-      opacity: $opacity-hover;
+      background-color: $color-primary-dark;
     }
 
+    // 無効時は有効時（ブルー＋白文字）と見分けがつくグレーにする
     &:disabled {
       transform: none;
-      background: #cccccc;
+      background-color: $color-bg-lighter;
+      color: $color-text-disabled;
       cursor: not-allowed;
     }
   }

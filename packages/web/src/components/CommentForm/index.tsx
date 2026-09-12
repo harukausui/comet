@@ -14,6 +14,11 @@ import {
 } from '@comet/shared';
 import { SectionBase } from '../common/SectionBase';
 import {
+  clearCommentStyleSettings,
+  loadCommentStyleSettings,
+  saveCommentStyleSettings,
+} from '../../comment-style-settings';
+import {
   ANIMATION_LABELS,
   COLOR_LABELS,
   SIZE_LABELS,
@@ -31,11 +36,22 @@ const COMMENT_COOLDOWN_MS = 2000;
 const DANMAKU_COOLDOWN_MS = 10000;
 
 export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
+  // 保存済みの職人設定があれば初期値として復元し、「設定を保存する」もONで始める
+  const [savedSettings] = useState(() => loadCommentStyleSettings());
   const [content, setContent] = useState('');
-  const [color, setColor] = useState<string>(COMMENT_COLORS.WHITE);
-  const [size, setSize] = useState<CommentSize>('medium');
-  const [speedOption, setSpeedOption] = useState<SpeedOption>('normal');
-  const [animation, setAnimation] = useState<CommentAnimation>('none');
+  const [color, setColor] = useState<string>(
+    savedSettings?.color ?? COMMENT_COLORS.WHITE
+  );
+  const [size, setSize] = useState<CommentSize>(
+    savedSettings?.size ?? 'medium'
+  );
+  const [speedOption, setSpeedOption] = useState<SpeedOption>(
+    savedSettings?.speedOption ?? 'normal'
+  );
+  const [animation, setAnimation] = useState<CommentAnimation>(
+    savedSettings?.animation ?? 'none'
+  );
+  const [shouldPersist, setShouldPersist] = useState(savedSettings !== null);
   const [isDanmakuMode, setIsDanmakuMode] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(0); // 残り秒数
   const danmakuTimeoutsRef = useRef<number[]>([]);
@@ -52,6 +68,15 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
       }
     };
   }, []);
+
+  // 「設定を保存する」がONの間は変更のたびに保存し、OFFにしたら保存済みの設定を消す
+  useEffect(() => {
+    if (shouldPersist) {
+      saveCommentStyleSettings({ color, size, speedOption, animation });
+    } else {
+      clearCommentStyleSettings();
+    }
+  }, [shouldPersist, color, size, speedOption, animation]);
 
   const startCooldown = (durationMs: number) => {
     const endAt = Date.now() + durationMs;
@@ -162,93 +187,111 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
           </button>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>色</label>
-            <div className="color-picker">
-              {(
-                Object.entries(COMMENT_COLORS) as [
-                  keyof typeof COMMENT_COLORS,
-                  string,
-                ][]
-              ).map(([name, value]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`color-button ${color === value ? 'selected' : ''}`}
-                  style={{ backgroundColor: value }}
-                  onClick={() => setColor(value)}
+        {/* 細かい見た目の調整は普段使わないので「職人設定」に折りたたんでおく */}
+        <details className="artisan-settings">
+          <summary className="artisan-settings-summary">職人設定</summary>
+          <div className="form-row">
+            <div className="form-group">
+              <label>色</label>
+              <div className="color-picker">
+                {(
+                  Object.entries(COMMENT_COLORS) as [
+                    keyof typeof COMMENT_COLORS,
+                    string,
+                  ][]
+                ).map(([name, value]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`color-button ${color === value ? 'selected' : ''}`}
+                    style={{ backgroundColor: value }}
+                    onClick={() => setColor(value)}
+                    disabled={disabled}
+                    title={COLOR_LABELS[name]}
+                    aria-label={COLOR_LABELS[name]}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>サイズ</label>
+              <div className="size-picker">
+                {COMMENT_SIZE_OPTIONS.map((sizeOption) => (
+                  <button
+                    key={sizeOption}
+                    type="button"
+                    className={`size-button ${size === sizeOption ? 'selected' : ''}`}
+                    onClick={() => setSize(sizeOption)}
+                    disabled={disabled}
+                  >
+                    {SIZE_LABELS[sizeOption]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>速度</label>
+              <div className="speed-picker">
+                {SPEED_OPTIONS.map((speed) => (
+                  <button
+                    key={speed}
+                    type="button"
+                    className={`speed-button ${speedOption === speed ? 'selected' : ''}`}
+                    onClick={() => setSpeedOption(speed)}
+                    disabled={disabled}
+                  >
+                    {SPEED_LABELS[speed]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>アニメーション</label>
+              <div className="animation-picker">
+                {COMMENT_ANIMATIONS.map((anim) => (
+                  <button
+                    key={anim}
+                    type="button"
+                    className={`animation-button ${animation === anim ? 'selected' : ''}`}
+                    onClick={() => setAnimation(anim)}
+                    disabled={disabled}
+                  >
+                    {ANIMATION_LABELS[anim]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group danmaku-toggle">
+              <label>盛り上げモード</label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={isDanmakuMode}
+                  onChange={(e) => setIsDanmakuMode(e.target.checked)}
                   disabled={disabled}
-                  title={COLOR_LABELS[name]}
-                  aria-label={COLOR_LABELS[name]}
                 />
-              ))}
+              </label>
+            </div>
+
+            <div className="form-group persist-toggle">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={shouldPersist}
+                  onChange={(e) => setShouldPersist(e.target.checked)}
+                />
+                設定を保存する
+              </label>
+              <p className="persist-hint">
+                色・サイズ・速度・アニメーションをこのブラウザに保存し、次回も同じ設定で開きます。
+              </p>
             </div>
           </div>
-
-          <div className="form-group">
-            <label>サイズ</label>
-            <div className="size-picker">
-              {COMMENT_SIZE_OPTIONS.map((sizeOption) => (
-                <button
-                  key={sizeOption}
-                  type="button"
-                  className={`size-button ${size === sizeOption ? 'selected' : ''}`}
-                  onClick={() => setSize(sizeOption)}
-                  disabled={disabled}
-                >
-                  {SIZE_LABELS[sizeOption]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>速度</label>
-            <div className="speed-picker">
-              {SPEED_OPTIONS.map((speed) => (
-                <button
-                  key={speed}
-                  type="button"
-                  className={`speed-button ${speedOption === speed ? 'selected' : ''}`}
-                  onClick={() => setSpeedOption(speed)}
-                  disabled={disabled}
-                >
-                  {SPEED_LABELS[speed]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>アニメーション</label>
-            <div className="animation-picker">
-              {COMMENT_ANIMATIONS.map((anim) => (
-                <button
-                  key={anim}
-                  type="button"
-                  className={`animation-button ${animation === anim ? 'selected' : ''}`}
-                  onClick={() => setAnimation(anim)}
-                  disabled={disabled}
-                >
-                  {ANIMATION_LABELS[anim]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-group danmaku-toggle">
-            <label>盛り上げモード</label>
-            <label className="toggle-label">
-              <input
-                type="checkbox"
-                checked={isDanmakuMode}
-                onChange={(e) => setIsDanmakuMode(e.target.checked)}
-                disabled={disabled}
-              />
-            </label>
-          </div>
-        </div>
+        </details>
       </form>
     </SectionBase>
   );
