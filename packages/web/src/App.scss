@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background-color: $color-brand-background;
+  background-color: $color-page-background;
 
   @media (max-width: $breakpoint-sm) {
     padding: $space-sm $space-sm 0;
@@ -16,11 +16,11 @@
     top: 0;
     width: 100%;
     margin-bottom: $space-lg;
-    border-bottom: $border-width-thin solid rgba(255, 255, 255, 0.08);
-    background-color: rgba(1, 6, 27, 0.88);
+    border-bottom: $border-width-thin solid $color-border;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: white;
+    background-color: rgba($color-bg-white, 0.92);
+    color: $color-text-primary;
 
     @media (max-width: $breakpoint-sm) {
       position: static;
@@ -117,7 +117,7 @@
   .app-footer {
     margin-top: auto;
     padding: 160px $space-md $space-xl;
-    color: $color-text-light;
+    color: $color-text-muted;
     font-size: $font-sm;
     text-align: center;
 
@@ -131,8 +131,10 @@
 
     a:hover,
     a:focus-visible {
-      color: $color-bg-white;
+      color: $color-primary;
       text-decoration: underline;
+      // ライラックは小さな装飾（下線）にだけ使う
+      text-decoration-color: $color-accent-lilac;
     }
   }
 }
@@ -146,10 +148,10 @@
 .extension-auth-card {
   width: min(100%, 520px);
   padding: 28px;
-  border: 1px solid $color-border;
+  border: $border-width-thin solid $color-border;
   border-radius: $radius-lg;
   background: $color-bg-white;
-  box-shadow: $shadow-md;
+  box-shadow: $shadow-card;
   text-align: center;
 
   h2 {
@@ -177,6 +179,6 @@
   }
 
   &.error {
-    border-color: $color-error;
+    border-color: $color-error-border;
   }
 }

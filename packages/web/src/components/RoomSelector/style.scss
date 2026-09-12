@@ -1,10 +1,10 @@
-// ヘッダー(ダーク背景)上に載せるためのトーン
-$toolbar-bg: rgba(255, 255, 255, 0.08);
-$toolbar-bg-hover: rgba(255, 255, 255, 0.14);
-$toolbar-border: rgba(255, 255, 255, 0.14);
-$toolbar-border-hover: rgba(255, 255, 255, 0.28);
-$toolbar-text: rgba(255, 255, 255, 0.92);
-$toolbar-text-muted: rgba(255, 255, 255, 0.55);
+// ヘッダー(白背景)上に載せるためのトーン。ホバーは淡いブルーで示す
+$toolbar-bg: $color-bg-white;
+$toolbar-bg-hover: $color-primary-soft;
+$toolbar-border: $color-border;
+$toolbar-border-hover: $color-border-light;
+$toolbar-text: $color-text-primary;
+$toolbar-text-muted: $color-text-muted;
 $toolbar-height: 36px;
 $color-online: #48bb78;
 
@@ -24,16 +24,16 @@ $color-online: #48bb78;
     padding: 0;
     overflow: hidden;
     clip: rect(0 0 0 0);
-    white-space: nowrap;
     border: 0;
+    white-space: nowrap;
   }
 
   // 入力群を1つのピルにまとめる
   .room-toolbar-group {
     display: flex;
     align-items: center;
-    height: $toolbar-height;
     min-width: 0;
+    height: $toolbar-height;
     overflow: hidden;
     border: $border-width-thin solid $toolbar-border;
     border-radius: 999px;
@@ -47,8 +47,8 @@ $color-online: #48bb78;
     }
 
     &:focus-within {
-      border-color: rgba($color-primary, 0.9);
-      box-shadow: 0 0 0 3px rgba($color-primary, 0.28);
+      border-color: $color-primary;
+      box-shadow: $shadow-focus;
     }
   }
 
@@ -61,9 +61,9 @@ $color-online: #48bb78;
     color: $toolbar-text-muted;
     font-weight: $font-semibold;
     font-size: $font-xs;
+    font-family: 'Space Grotesk', sans-serif;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    font-family: 'Space Grotesk', sans-serif;
     white-space: nowrap;
     cursor: pointer;
   }
@@ -73,7 +73,9 @@ $color-online: #48bb78;
     height: 8px;
     border-radius: 50%;
     background-color: $toolbar-text-muted;
-    transition: background-color $transition-base, box-shadow $transition-base;
+    transition:
+      background-color $transition-base,
+      box-shadow $transition-base;
 
     &.is-online {
       background-color: $color-online;
@@ -83,8 +85,8 @@ $color-online: #48bb78;
 
   select,
   input {
-    height: 100%;
     min-width: 0;
+    height: 100%;
     padding: 0 $space-sm;
     border: 0;
     outline: none;
@@ -104,10 +106,10 @@ $color-online: #48bb78;
   }
 
   select {
+    appearance: none;
     max-width: 240px;
     padding-right: $space-lg;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='rgba(255,255,255,0.6)' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23626d80' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-position: right $space-xs center;
     background-size: $space-md;
     background-repeat: no-repeat;
@@ -116,8 +118,8 @@ $color-online: #48bb78;
 
     // ドロップダウン自体はOS描画なので読める配色に戻す
     option {
-      color: $color-text-primary;
       background-color: $color-bg-white;
+      color: $color-text-primary;
     }
   }
 
@@ -125,8 +127,8 @@ $color-online: #48bb78;
   .room-create {
     display: flex;
     align-items: center;
-    height: 100%;
     min-width: 0;
+    height: 100%;
   }
 
   .room-create input {
@@ -134,7 +136,7 @@ $color-online: #48bb78;
   }
 
   .room-toolbar-group.is-creating {
-    border-color: rgba($color-primary, 0.9);
+    border-color: $color-primary;
   }
 
   .room-icon-button {
@@ -147,11 +149,13 @@ $color-online: #48bb78;
     border-left: $border-width-thin solid $toolbar-border;
     background-color: transparent;
     color: $toolbar-text-muted;
-    transition: color $transition-base, background-color $transition-base;
+    transition:
+      color $transition-base,
+      background-color $transition-base;
 
     &:hover:not(:disabled) {
       background-color: $toolbar-bg-hover;
-      color: $toolbar-text;
+      color: $color-primary;
     }
 
     &:hover:not(:disabled) svg {
@@ -173,20 +177,23 @@ $color-online: #48bb78;
     padding: 0 $space-md;
     border: 0;
     background-color: $color-primary;
-    color: white;
+    color: $color-bg-white;
     font-weight: $font-semibold;
     font-size: $font-sm;
     font-family: inherit;
     white-space: nowrap;
-    transition: background-color $transition-base, opacity $transition-base;
+    transition:
+      background-color $transition-base,
+      opacity $transition-base;
 
     &:hover:not(:disabled) {
       background-color: $color-primary-dark;
     }
 
+    // 無効時は有効時（ブルー）と見分けがつくグレーにする
     &:disabled {
-      background-color: $toolbar-bg;
-      color: $toolbar-text-muted;
+      background-color: $color-bg-lighter;
+      color: $color-text-disabled;
       cursor: not-allowed;
     }
   }
@@ -198,22 +205,25 @@ $color-online: #48bb78;
     padding: 0 $space-md;
     border: $border-width-thin solid $toolbar-border;
     border-radius: 999px;
+    background-color: $toolbar-bg;
     color: $toolbar-text;
     font-weight: $font-semibold;
     font-size: $font-sm;
     white-space: nowrap;
     transition:
       border-color $transition-base,
-      background-color $transition-base;
+      background-color $transition-base,
+      color $transition-base;
 
     &:hover {
-      border-color: $toolbar-border-hover;
-      background-color: $toolbar-bg;
+      border-color: $color-primary;
+      background-color: $toolbar-bg-hover;
+      color: $color-primary-dark;
     }
 
     &:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba($color-primary, 0.28);
+      box-shadow: $shadow-focus;
     }
   }
 

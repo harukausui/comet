@@ -1,12 +1,12 @@
 .stamp-dialog-overlay {
+  display: flex;
   z-index: $z-modal;
   position: fixed;
-  inset: 0;
-  display: flex;
   align-items: center;
   justify-content: center;
+  inset: 0;
   padding: $space-md;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba($color-text-primary, 0.45);
 }
 
 .stamp-dialog-container {
@@ -31,14 +31,14 @@
 
   .stamp-manage-empty {
     padding: $space-xl $space-md;
-    color: $color-text-light;
+    color: $color-text-muted;
     font-size: $font-sm;
     text-align: center;
   }
 
   .stamp-manage-grid {
-    padding: $space-xs;
     max-height: 320px;
+    padding: $space-xs;
   }
 
   // 管理画面では削除が主目的なので、×を常時表示する
@@ -49,8 +49,8 @@
   .stamp-manage-footer {
     display: flex;
     justify-content: space-between;
-    gap: $space-sm;
     padding-top: $space-md;
+    gap: $space-sm;
     border-top: $border-width-thin solid $color-border;
   }
 
@@ -66,7 +66,7 @@
 
   .stamp-manage-add {
     background-color: $color-primary;
-    color: white;
+    color: $color-bg-white;
 
     &:hover {
       background-color: $color-primary-dark;
@@ -78,7 +78,8 @@
     color: $color-text-secondary;
 
     &:hover {
-      background-color: $color-bg-lighter;
+      background-color: $color-primary-soft;
+      color: $color-primary-dark;
     }
   }
 }
