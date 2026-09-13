@@ -14,10 +14,13 @@ import {
 } from '@comet/shared';
 import { SectionBase } from '../common/SectionBase';
 import {
-  clearCommentStyleSettings,
-  loadCommentStyleSettings,
-  saveCommentStyleSettings,
-} from '../../comment-style-settings';
+  BoltIcon,
+  ClearFormatIcon,
+  SparklesIcon,
+  SpeedIcon,
+  TextSizeIcon,
+} from '../../assets/icons';
+import { SettingMenu } from './SettingMenu';
 import {
   ANIMATION_LABELS,
   COLOR_LABELS,
@@ -35,23 +38,40 @@ interface CommentFormProps {
 const COMMENT_COOLDOWN_MS = 2000;
 const DANMAKU_COOLDOWN_MS = 10000;
 
+// 職人設定の初期値。リセットボタンでここに戻す
+const DEFAULT_COLOR: string = COMMENT_COLORS.WHITE;
+const DEFAULT_SIZE: CommentSize = 'medium';
+const DEFAULT_SPEED: SpeedOption = 'normal';
+const DEFAULT_ANIMATION: CommentAnimation = 'none';
+
+// 職人設定のメニューに並べる選択肢
+const COLOR_OPTIONS = (
+  Object.entries(COMMENT_COLORS) as [keyof typeof COMMENT_COLORS, string][]
+).map(([name, value]) => ({
+  value,
+  label: COLOR_LABELS[name],
+  swatch: value,
+}));
+const SIZE_OPTIONS = COMMENT_SIZE_OPTIONS.map((value) => ({
+  value,
+  label: SIZE_LABELS[value],
+}));
+const SPEED_MENU_OPTIONS = SPEED_OPTIONS.map((value) => ({
+  value,
+  label: SPEED_LABELS[value],
+}));
+const ANIMATION_OPTIONS = COMMENT_ANIMATIONS.map((value) => ({
+  value,
+  label: ANIMATION_LABELS[value],
+}));
+
 export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
-  // 保存済みの職人設定があれば初期値として復元し、「設定を保存する」もONで始める
-  const [savedSettings] = useState(() => loadCommentStyleSettings());
   const [content, setContent] = useState('');
-  const [color, setColor] = useState<string>(
-    savedSettings?.color ?? COMMENT_COLORS.WHITE
-  );
-  const [size, setSize] = useState<CommentSize>(
-    savedSettings?.size ?? 'medium'
-  );
-  const [speedOption, setSpeedOption] = useState<SpeedOption>(
-    savedSettings?.speedOption ?? 'normal'
-  );
-  const [animation, setAnimation] = useState<CommentAnimation>(
-    savedSettings?.animation ?? 'none'
-  );
-  const [shouldPersist, setShouldPersist] = useState(savedSettings !== null);
+  const [color, setColor] = useState<string>(DEFAULT_COLOR);
+  const [size, setSize] = useState<CommentSize>(DEFAULT_SIZE);
+  const [speedOption, setSpeedOption] = useState<SpeedOption>(DEFAULT_SPEED);
+  const [animation, setAnimation] =
+    useState<CommentAnimation>(DEFAULT_ANIMATION);
   const [isDanmakuMode, setIsDanmakuMode] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(0); // 残り秒数
   const danmakuTimeoutsRef = useRef<number[]>([]);
@@ -68,15 +88,6 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
       }
     };
   }, []);
-
-  // 「設定を保存する」がONの間は変更のたびに保存し、OFFにしたら保存済みの設定を消す
-  useEffect(() => {
-    if (shouldPersist) {
-      saveCommentStyleSettings({ color, size, speedOption, animation });
-    } else {
-      clearCommentStyleSettings();
-    }
-  }, [shouldPersist, color, size, speedOption, animation]);
 
   const startCooldown = (durationMs: number) => {
     const endAt = Date.now() + durationMs;
@@ -162,136 +173,114 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
     }
   };
 
+  // 盛り上げモード中はスタイルがランダムになるので、個別の設定メニューは触れないようにする
+  const toggleDanmakuMode = () => {
+    setIsDanmakuMode((current) => !current);
+  };
+
+  // すべて初期値のときはリセットしても何も変わらないので、ボタンは押せなくしておく
+  const isDefaultStyle =
+    color === DEFAULT_COLOR &&
+    size === DEFAULT_SIZE &&
+    speedOption === DEFAULT_SPEED &&
+    animation === DEFAULT_ANIMATION &&
+    !isDanmakuMode;
+
+  const resetStyle = () => {
+    setColor(DEFAULT_COLOR);
+    setSize(DEFAULT_SIZE);
+    setSpeedOption(DEFAULT_SPEED);
+    setAnimation(DEFAULT_ANIMATION);
+    setIsDanmakuMode(false);
+  };
+
   return (
-    <SectionBase title="コメントフォーム" className="comment-form-section">
+    <SectionBase className="comment-form-section">
       <form className="comment-form" onSubmit={handleSubmit}>
-        {/* 入力してすぐ送れるように、入力欄と送信ボタンを同じ行に置く */}
-        <div className="form-group comment-input-row">
-          <input
-            id="comment-input"
-            type="text"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="コメントを入力..."
-            disabled={disabled}
-            className="comment-input"
-            maxLength={100}
-          />
-          <button
-            type="submit"
-            disabled={disabled || !content.trim() || cooldownRemaining > 0}
-            className="submit-button"
-            aria-label="コメントを送信"
-          >
-            {cooldownRemaining > 0 ? `送信 (${cooldownRemaining}秒)` : '送信'}
-          </button>
-        </div>
+        {/* エディタ風の構成: 上段に今の職人設定を 1 個ずつチップで並べ、押すとメニューが開いて
+            選択肢を選べる。下段は入力欄と送信ボタン。全体を .comment-composer のひとつの枠にまとめる */}
+        <div className="comment-composer">
+          <div className="composer-settings">
+            {/* 色は今の色の四角だけを見せる */}
+            <SettingMenu
+              label="色"
+              options={COLOR_OPTIONS}
+              value={color}
+              onChange={setColor}
+              disabled={isDanmakuMode}
+              showValueText={false}
+            />
+            <SettingMenu
+              label="サイズ"
+              icon={<TextSizeIcon />}
+              options={SIZE_OPTIONS}
+              value={size}
+              onChange={setSize}
+              disabled={isDanmakuMode}
+            />
+            <SettingMenu
+              label="速度"
+              icon={<SpeedIcon />}
+              options={SPEED_MENU_OPTIONS}
+              value={speedOption}
+              onChange={setSpeedOption}
+              disabled={isDanmakuMode}
+            />
+            <SettingMenu
+              label="アニメーション"
+              icon={<SparklesIcon />}
+              options={ANIMATION_OPTIONS}
+              value={animation}
+              onChange={setAnimation}
+              disabled={isDanmakuMode}
+            />
+            <button
+              type="button"
+              className="danmaku-chip"
+              aria-label="盛り上げモード"
+              data-tooltip="盛り上げモード"
+              aria-pressed={isDanmakuMode}
+              onClick={toggleDanmakuMode}
+              disabled={disabled}
+            >
+              <BoltIcon />
+            </button>
 
-        {/* 細かい見た目の調整は普段使わないので「職人設定」に折りたたんでおく */}
-        <details className="artisan-settings">
-          <summary className="artisan-settings-summary">職人設定</summary>
-          <div className="form-row">
-            <div className="form-group">
-              <label>色</label>
-              <div className="color-picker">
-                {(
-                  Object.entries(COMMENT_COLORS) as [
-                    keyof typeof COMMENT_COLORS,
-                    string,
-                  ][]
-                ).map(([name, value]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={`color-button ${color === value ? 'selected' : ''}`}
-                    style={{ backgroundColor: value }}
-                    onClick={() => setColor(value)}
-                    disabled={disabled}
-                    title={COLOR_LABELS[name]}
-                    aria-label={COLOR_LABELS[name]}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>サイズ</label>
-              <div className="size-picker">
-                {COMMENT_SIZE_OPTIONS.map((sizeOption) => (
-                  <button
-                    key={sizeOption}
-                    type="button"
-                    className={`size-button ${size === sizeOption ? 'selected' : ''}`}
-                    onClick={() => setSize(sizeOption)}
-                    disabled={disabled}
-                  >
-                    {SIZE_LABELS[sizeOption]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>速度</label>
-              <div className="speed-picker">
-                {SPEED_OPTIONS.map((speed) => (
-                  <button
-                    key={speed}
-                    type="button"
-                    className={`speed-button ${speedOption === speed ? 'selected' : ''}`}
-                    onClick={() => setSpeedOption(speed)}
-                    disabled={disabled}
-                  >
-                    {SPEED_LABELS[speed]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>アニメーション</label>
-              <div className="animation-picker">
-                {COMMENT_ANIMATIONS.map((anim) => (
-                  <button
-                    key={anim}
-                    type="button"
-                    className={`animation-button ${animation === anim ? 'selected' : ''}`}
-                    onClick={() => setAnimation(anim)}
-                    disabled={disabled}
-                  >
-                    {ANIMATION_LABELS[anim]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group danmaku-toggle">
-              <label>盛り上げモード</label>
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
-                  checked={isDanmakuMode}
-                  onChange={(e) => setIsDanmakuMode(e.target.checked)}
-                  disabled={disabled}
-                />
-              </label>
-            </div>
-
-            <div className="form-group persist-toggle">
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
-                  checked={shouldPersist}
-                  onChange={(e) => setShouldPersist(e.target.checked)}
-                />
-                設定を保存する
-              </label>
-              <p className="persist-hint">
-                色・サイズ・速度・アニメーションをこのブラウザに保存し、次回も同じ設定で開きます。
-              </p>
-            </div>
+            {/* 職人設定をワンタッチで初期値に戻す */}
+            <button
+              type="button"
+              className="composer-reset"
+              aria-label="設定をリセット"
+              data-tooltip="設定をリセット"
+              disabled={isDefaultStyle}
+              onClick={resetStyle}
+            >
+              <ClearFormatIcon />
+            </button>
           </div>
-        </details>
+
+          {/* 入力してすぐ送れるように、入力欄と送信ボタンは同じ行に置く */}
+          <div className="composer-input-row">
+            <input
+              id="comment-input"
+              type="text"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="コメントを入力..."
+              disabled={disabled}
+              className="comment-input"
+              maxLength={100}
+            />
+            <button
+              type="submit"
+              disabled={disabled || !content.trim() || cooldownRemaining > 0}
+              className="submit-button"
+              aria-label="コメントを送信"
+            >
+              {cooldownRemaining > 0 ? `送信 (${cooldownRemaining}秒)` : '送信'}
+            </button>
+          </div>
+        </div>
       </form>
     </SectionBase>
   );
