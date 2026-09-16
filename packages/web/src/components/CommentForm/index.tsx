@@ -44,12 +44,6 @@ interface CommentFormProps {
 const COMMENT_COOLDOWN_MS = 2000;
 const DANMAKU_COOLDOWN_MS = 10000;
 
-const PREVIEW_DURATION_SECONDS: Record<SpeedOption, number> = {
-  slow: 4,
-  normal: 3,
-  fast: 2,
-};
-
 // 職人設定の初期値。リセットボタンでここに戻す
 const DEFAULT_COLOR: string = COMMENT_COLORS.WHITE;
 const DEFAULT_SIZE: CommentSize = 'medium';
@@ -224,7 +218,7 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
   };
 
   const previewShadowColor = color === COMMENT_COLORS.WHITE ? '#000' : '#FFF';
-  const previewText = content.trim() || 'コメントの見え方をプレビュー';
+  const previewText = content.trim();
 
   return (
     <SectionBase className="comment-form-section">
@@ -309,13 +303,14 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
               <p className="comment-preview-note">
                 盛り上げモードでは、見た目が送信時にランダムで決まります
               </p>
+            ) : !previewText ? (
+              <p className="comment-preview-note">
+                コメントを入力するとプレビューできます
+              </p>
             ) : (
               <span
-                key={`${previewText}-${color}-${size}-${speedOption}-${animation}`}
+                key={`${previewText}-${color}-${size}-${animation}`}
                 className="comment-preview-track"
-                style={{
-                  animationDuration: `${PREVIEW_DURATION_SECONDS[speedOption]}s`,
-                }}
               >
                 <span
                   className={`comment-preview-text comment-preview-animation-${animation}`}

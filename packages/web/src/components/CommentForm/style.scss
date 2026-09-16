@@ -58,16 +58,12 @@ $breakpoint-xs: 400px;
   }
 
   .comment-preview-track {
+    display: flex;
     position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    transform: translateY(-50%);
+    align-items: center;
+    justify-content: center;
+    inset: 0;
     white-space: nowrap;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-name: comment-preview-scroll;
-    will-change: transform;
   }
 
   .comment-preview-text {
@@ -480,16 +476,6 @@ $breakpoint-xs: 400px;
   }
 }
 
-@keyframes comment-preview-scroll {
-  from {
-    transform: translate(100%, -50%);
-  }
-
-  to {
-    transform: translate(-100%, -50%);
-  }
-}
-
 @keyframes comment-preview-blink {
   0%,
   100% {
@@ -556,16 +542,8 @@ $breakpoint-xs: 400px;
 
 @media (prefers-reduced-motion: reduce) {
   .comment-form {
-    .comment-preview-track,
     .comment-preview-text {
       animation: none;
-    }
-
-    .comment-preview-track {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform: translateY(-50%);
     }
   }
 }

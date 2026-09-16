@@ -104,6 +104,13 @@ describe('CommentForm', () => {
     );
   });
 
+  it('shows guidance before a comment is entered', () => {
+    render(<CommentForm onSubmit={vi.fn()} />);
+    expect(
+      screen.getByText('コメントを入力するとプレビューできます')
+    ).toBeTruthy();
+  });
+
   it('resets every setting to the defaults with one click', () => {
     render(<CommentForm onSubmit={vi.fn()} />);
     const reset = screen.getByRole<HTMLButtonElement>('button', {
