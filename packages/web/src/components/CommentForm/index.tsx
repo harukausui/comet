@@ -7,6 +7,7 @@ import type {
 } from '@comet/shared';
 import {
   COMMENT_COLORS,
+  COMMENT_SIZES,
   COMMENT_SIZE_OPTIONS,
   SPEED_OPTIONS,
   SPEED_VALUES,
@@ -21,6 +22,11 @@ import {
   TextSizeIcon,
 } from '../../assets/icons';
 import { SettingMenu } from './SettingMenu';
+import {
+  clearCommentStyleSettings,
+  loadCommentStyleSettings,
+  saveCommentStyleSettings,
+} from '../../comment-style-settings';
 import {
   ANIMATION_LABELS,
   COLOR_LABELS,
@@ -37,6 +43,12 @@ interface CommentFormProps {
 // 連投による荒れ・過負荷を防ぐための送信クールダウン
 const COMMENT_COOLDOWN_MS = 2000;
 const DANMAKU_COOLDOWN_MS = 10000;
+
+const PREVIEW_DURATION_SECONDS: Record<SpeedOption, number> = {
+  slow: 4,
+  normal: 3,
+  fast: 2,
+};
 
 // 職人設定の初期値。リセットボタンでここに戻す
 const DEFAULT_COLOR: string = COMMENT_COLORS.WHITE;
@@ -66,12 +78,21 @@ const ANIMATION_OPTIONS = COMMENT_ANIMATIONS.map((value) => ({
 }));
 
 export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
+  const [savedSettings] = useState(() => loadCommentStyleSettings());
   const [content, setContent] = useState('');
-  const [color, setColor] = useState<string>(DEFAULT_COLOR);
-  const [size, setSize] = useState<CommentSize>(DEFAULT_SIZE);
-  const [speedOption, setSpeedOption] = useState<SpeedOption>(DEFAULT_SPEED);
-  const [animation, setAnimation] =
-    useState<CommentAnimation>(DEFAULT_ANIMATION);
+  const [color, setColor] = useState<string>(
+    savedSettings?.color ?? DEFAULT_COLOR
+  );
+  const [size, setSize] = useState<CommentSize>(
+    savedSettings?.size ?? DEFAULT_SIZE
+  );
+  const [speedOption, setSpeedOption] = useState<SpeedOption>(
+    savedSettings?.speedOption ?? DEFAULT_SPEED
+  );
+  const [animation, setAnimation] = useState<CommentAnimation>(
+    savedSettings?.animation ?? DEFAULT_ANIMATION
+  );
+  const [shouldPersist, setShouldPersist] = useState(savedSettings !== null);
   const [isDanmakuMode, setIsDanmakuMode] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(0); // 残り秒数
   const danmakuTimeoutsRef = useRef<number[]>([]);
@@ -88,6 +109,14 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (shouldPersist) {
+      saveCommentStyleSettings({ color, size, speedOption, animation });
+    } else {
+      clearCommentStyleSettings();
+    }
+  }, [shouldPersist, color, size, speedOption, animation]);
 
   const startCooldown = (durationMs: number) => {
     const endAt = Date.now() + durationMs;
@@ -194,6 +223,9 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
     setIsDanmakuMode(false);
   };
 
+  const previewShadowColor = color === COMMENT_COLORS.WHITE ? '#000' : '#FFF';
+  const previewText = content.trim() || 'コメントの見え方をプレビュー';
+
   return (
     <SectionBase className="comment-form-section">
       <form className="comment-form" onSubmit={handleSubmit}>
@@ -246,6 +278,15 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
               <BoltIcon />
             </button>
 
+            <label className="persist-chip">
+              <input
+                type="checkbox"
+                checked={shouldPersist}
+                onChange={(event) => setShouldPersist(event.target.checked)}
+              />
+              設定を保存
+            </label>
+
             {/* 職人設定をワンタッチで初期値に戻す */}
             <button
               type="button"
@@ -257,6 +298,37 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
             >
               <ClearFormatIcon />
             </button>
+          </div>
+
+          <div
+            className="comment-preview"
+            aria-label="コメントのプレビュー"
+            aria-live="polite"
+          >
+            {isDanmakuMode ? (
+              <p className="comment-preview-note">
+                盛り上げモードでは、見た目が送信時にランダムで決まります
+              </p>
+            ) : (
+              <span
+                key={`${previewText}-${color}-${size}-${speedOption}-${animation}`}
+                className="comment-preview-track"
+                style={{
+                  animationDuration: `${PREVIEW_DURATION_SECONDS[speedOption]}s`,
+                }}
+              >
+                <span
+                  className={`comment-preview-text comment-preview-animation-${animation}`}
+                  style={{
+                    color,
+                    fontSize: `${COMMENT_SIZES[size]}px`,
+                    textShadow: `-1px -1px 0 ${previewShadowColor}, 1px -1px 0 ${previewShadowColor}, -1px 1px 0 ${previewShadowColor}, 1px 1px 0 ${previewShadowColor}, 0 0 4px ${previewShadowColor}`,
+                  }}
+                >
+                  {previewText}
+                </span>
+              </span>
+            )}
           </div>
 
           {/* 入力してすぐ送れるように、入力欄と送信ボタンは同じ行に置く */}

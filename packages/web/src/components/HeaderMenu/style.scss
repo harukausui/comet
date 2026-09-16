@@ -3,11 +3,6 @@ $menu-button-size: 36px; // RoomSelector のピル（$toolbar-height）と揃え
 .header-menu {
   position: relative;
   flex-shrink: 0;
-
-  // 中身（履歴・カスタムスタンプ管理）は運営がPCで使う操作なので、小さい端末では出さない
-  @media (max-width: $breakpoint-sm) {
-    display: none;
-  }
 }
 
 .header-menu-button {

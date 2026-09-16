@@ -16,13 +16,18 @@ interface StampPickerProps {
   /** サーバに登録済みのカスタムスタンプ。取得と管理は App 側（useCustomStamps）で行う */
   customStamps: Stamp[];
   onSelectStamp: (stamp: Stamp) => void;
+  disabled?: boolean;
 }
 
 /**
  * よく使うスタンプのパレット。画面にはパレットだけを出し、
  * 中身の変更はモーダルの編集ダイアログで行い、「保存」で反映する（画面のレイアウトを動かさない）
  */
-export function StampPicker({ customStamps, onSelectStamp }: StampPickerProps) {
+export function StampPicker({
+  customStamps,
+  onSelectStamp,
+  disabled = false,
+}: StampPickerProps) {
   const [palette, setPalette] = useState(() => loadStampPalette());
   const [isEditorOpen, setEditorOpen] = useState(false);
 
@@ -47,6 +52,7 @@ export function StampPicker({ customStamps, onSelectStamp }: StampPickerProps) {
           entries={palette}
           customStamps={customStamps}
           editing={false}
+          disabled={disabled}
           onSelect={onSelectStamp}
           onRemove={() => {}}
           onReorder={() => {}}

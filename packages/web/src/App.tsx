@@ -127,6 +127,7 @@ function LiveApp() {
               <StampPicker
                 customStamps={customStamps}
                 onSelectStamp={handleStampSelect}
+                disabled={!isConnected || isJoiningRoom}
               />
             </div>
           </main>

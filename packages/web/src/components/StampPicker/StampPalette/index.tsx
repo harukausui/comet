@@ -8,6 +8,8 @@ interface StampPaletteProps {
   customStamps: readonly Stamp[];
   /** 編集中はタイルをドラッグで並び替え、右上の × でパレットから外す（送信はしない） */
   editing: boolean;
+  /** 表示中のパレットからスタンプを送れない状態。編集操作には影響させない */
+  disabled?: boolean;
   /** 推奨上限。編集中はこの位置より後ろのスタンプを「超過」として赤く示す */
   limit?: number;
   /** 末尾の鉛筆タイルを出すか。編集パネルの中では出さない */
@@ -50,6 +52,7 @@ export function StampPalette({
   entries,
   customStamps,
   editing,
+  disabled = false,
   limit,
   showEditToggle = true,
   editToggleActive = false,
@@ -170,8 +173,10 @@ export function StampPalette({
   // ドラッグ中の move / up は document で受ける。
   // 並び替えで React がタイルを DOM 上で動かすと、そのタイルに張ったポインタキャプチャは解放されてしまい、
   // pointer-events: none の掴んだタイルには pointerup が届かなくなるため
+  const hasDrag = drag !== null;
+
   useEffect(() => {
-    if (!drag) return;
+    if (!hasDrag) return;
 
     const handleMove = (event: PointerEvent) => {
       const current = dragRef.current;
@@ -240,8 +245,7 @@ export function StampPalette({
       document.removeEventListener('pointercancel', handleEnd);
     };
     // drag の有無が切り替わったときだけ購読し直す（中身は ref で読む）
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag !== null]);
+  }, [hasDrag]);
 
   const handleClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!suppressClickRef.current) return;
@@ -324,6 +328,7 @@ export function StampPalette({
             type="button"
             data-stamp-id={stamp.id}
             className={className}
+            disabled={disabled}
             onClick={() => onSelect(stamp)}
             title={stamp.name}
             aria-label={`${stamp.name} を送る`}
