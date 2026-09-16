@@ -43,6 +43,7 @@ interface CommentFormProps {
 // 連投による荒れ・過負荷を防ぐための送信クールダウン
 const COMMENT_COOLDOWN_MS = 2000;
 const DANMAKU_COOLDOWN_MS = 10000;
+const PREVIEW_SIZE_SCALE = 0.65;
 
 // 職人設定の初期値。リセットボタンでここに戻す
 const DEFAULT_COLOR: string = COMMENT_COLORS.WHITE;
@@ -316,7 +317,7 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
                   className={`comment-preview-text comment-preview-animation-${animation}`}
                   style={{
                     color,
-                    fontSize: `${COMMENT_SIZES[size]}px`,
+                    fontSize: `${COMMENT_SIZES[size] * PREVIEW_SIZE_SCALE}px`,
                     textShadow: `-1px -1px 0 ${previewShadowColor}, 1px -1px 0 ${previewShadowColor}, -1px 1px 0 ${previewShadowColor}, 1px 1px 0 ${previewShadowColor}, 0 0 4px ${previewShadowColor}`,
                   }}
                 >
