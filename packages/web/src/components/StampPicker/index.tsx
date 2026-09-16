@@ -12,6 +12,8 @@ const UnifiedPicker = lazy(() => import('./UnifiedPicker'));
 
 interface StampPickerProps {
   onSelectStamp: (stamp: Stamp) => void;
+  /** WebSocket で送信できない間は、HTTP API の管理操作を残してピッカーだけ無効にする */
+  disabled?: boolean;
 }
 
 async function stampApiUrl(path: string): Promise<string> {
@@ -32,7 +34,10 @@ async function errorMessage(response: Response, fallback: string) {
 }
 
 // スタンプの追加・管理はHTTP APIで完結するため、WebSocketの接続状態には依存させない
-export function StampPicker({ onSelectStamp }: StampPickerProps) {
+export function StampPicker({
+  onSelectStamp,
+  disabled = false,
+}: StampPickerProps) {
   const [customStamps, setCustomStamps] = useState<Stamp[]>([]);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showManageDialog, setShowManageDialog] = useState(false);
@@ -191,7 +196,11 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
         }
         className="stamp-picker"
       >
-        <div className="emoji-picker-wrapper">
+        <fieldset
+          className="emoji-picker-wrapper emoji-picker-fieldset"
+          disabled={disabled}
+          aria-label="送信するスタンプを選ぶ"
+        >
           <Suspense
             fallback={<div className="emoji-picker-loading">読み込み中...</div>}
           >
@@ -200,7 +209,7 @@ export function StampPicker({ onSelectStamp }: StampPickerProps) {
               onSelectStamp={onSelectStamp}
             />
           </Suspense>
-        </div>
+        </fieldset>
       </SectionBase>
 
       <ManageDialog

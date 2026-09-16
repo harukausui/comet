@@ -46,6 +46,10 @@ describe('App live screen', () => {
     expect(screen.getByLabelText('Room')).toHaveProperty('disabled', true);
     expect(screen.getByRole('button', { name: 'Room一覧を更新' })).toHaveProperty('disabled', true);
     expect(screen.getByPlaceholderText('コメントを入力...')).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'スタンプ' })).toHaveProperty(
+      'disabled',
+      true
+    );
   });
 
   it('keeps posting controls disabled while joining a Room', () => {
@@ -55,5 +59,9 @@ describe('App live screen', () => {
 
     expect(screen.getByLabelText('Room')).toHaveProperty('disabled', true);
     expect(screen.getByPlaceholderText('コメントを入力...')).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'スタンプ' })).toHaveProperty(
+      'disabled',
+      true
+    );
   });
 });
