@@ -43,9 +43,13 @@ describe('App live screen', () => {
   it('disables Room and posting controls until connected', () => {
     render(<App />);
 
-    expect(screen.getByLabelText('参加中のRoom')).toHaveProperty('disabled', true);
+    expect(screen.getByLabelText('Room')).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Room一覧を更新' })).toHaveProperty('disabled', true);
     expect(screen.getByPlaceholderText('コメントを入力...')).toHaveProperty('disabled', true);
-    expect(screen.getByRole('button', { name: '作成' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'スタンプ' })).toHaveProperty(
+      'disabled',
+      true
+    );
   });
 
   it('keeps posting controls disabled while joining a Room', () => {
@@ -53,7 +57,11 @@ describe('App live screen', () => {
     mocks.socket.isJoiningRoom = true;
     render(<App />);
 
-    expect(screen.getByLabelText('参加中のRoom')).toHaveProperty('disabled', true);
+    expect(screen.getByLabelText('Room')).toHaveProperty('disabled', true);
     expect(screen.getByPlaceholderText('コメントを入力...')).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'スタンプ' })).toHaveProperty(
+      'disabled',
+      true
+    );
   });
 });

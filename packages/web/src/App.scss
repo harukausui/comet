@@ -3,56 +3,74 @@
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background-color: $color-brand-background;
+  background-color: $color-page-background;
 
   @media (max-width: $breakpoint-sm) {
     padding: $space-sm $space-sm 0;
   }
 
+  // 画面上部に固定されるアプリバー。左にロゴ、右にRoom操作ツールバーを配置する
   .app-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    z-index: $z-sticky;
+    position: sticky;
+    top: 0;
     width: 100%;
-    padding: 40px 0 $space-md;
-    gap: 40px;
-    color: white;
-    text-align: center;
+    margin-bottom: $space-lg;
+    border-bottom: $border-width-thin solid $color-border;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba($color-bg-white, 0.92);
+    color: $color-text-primary;
 
     @media (max-width: $breakpoint-sm) {
-      padding: 14px 0;
+      position: static;
+      margin: -$space-sm (-$space-sm) $space-md;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .app-header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1200px;
+      min-height: 64px;
+      margin: 0 auto;
+      padding: $space-sm 0;
+      gap: $space-sm $space-lg;
+
+      @media (max-width: $breakpoint-sm) {
+        padding: $space-sm $space-sm $space-md;
+        gap: $space-sm;
+      }
     }
 
     .app-title {
       display: flex;
+      flex-shrink: 0;
       align-items: center;
-      justify-content: center;
       margin: 0;
-      gap: $space-md;
+      gap: $space-sm;
       font-weight: $font-bold;
-      font-size: 48px;
+      font-size: $font-xxxl;
       line-height: 1;
       font-family: 'Space Grotesk', sans-serif;
 
       @media (max-width: $breakpoint-sm) {
-        gap: $space-sm;
         font-size: $font-xxl;
       }
 
       .comet-icon {
-        width: 60px;
-        height: 60px;
+        width: 36px;
+        height: 36px;
 
         @media (max-width: $breakpoint-sm) {
           width: 30px;
           height: 30px;
         }
       }
-    }
-
-    &.compact-header {
-      padding-bottom: $space-lg;
-      gap: 0;
     }
   }
 
@@ -99,7 +117,7 @@
   .app-footer {
     margin-top: auto;
     padding: 160px $space-md $space-xl;
-    color: $color-text-light;
+    color: $color-text-muted;
     font-size: $font-sm;
     text-align: center;
 
@@ -113,8 +131,10 @@
 
     a:hover,
     a:focus-visible {
-      color: $color-bg-white;
+      color: $color-primary;
       text-decoration: underline;
+      // ライラックは小さな装飾（下線）にだけ使う
+      text-decoration-color: $color-accent-lilac;
     }
   }
 }
@@ -128,10 +148,10 @@
 .extension-auth-card {
   width: min(100%, 520px);
   padding: 28px;
-  border: 1px solid $color-border;
+  border: $border-width-thin solid $color-border;
   border-radius: $radius-lg;
   background: $color-bg-white;
-  box-shadow: $shadow-md;
+  box-shadow: $shadow-card;
   text-align: center;
 
   h2 {
@@ -159,6 +179,6 @@
   }
 
   &.error {
-    border-color: $color-error;
+    border-color: $color-error-border;
   }
 }

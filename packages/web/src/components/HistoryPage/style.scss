@@ -66,7 +66,7 @@
   font-size: $font-sm;
   transition: border-color $transition-base, background-color $transition-base, box-shadow $transition-base;
 
-  &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($color-primary, .22); }
+  &:focus-visible { outline: none; box-shadow: $shadow-focus; }
   &:disabled { cursor: not-allowed; opacity: $opacity-disabled; }
   &.primary { border: $border-width solid $color-primary; background: $color-primary; color: white; }
   &.primary:hover:not(:disabled) { border-color: $color-primary-dark; background: $color-primary-dark; }
@@ -130,7 +130,7 @@
   scroll-snap-align: start;
   transition: transform $transition-base, border-color $transition-base, box-shadow $transition-base;
   &:hover { transform: translateY(-2px); border-color: $color-primary; box-shadow: $shadow-md; }
-  &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($color-primary, .22); }
+  &:focus-visible { outline: none; box-shadow: $shadow-focus; }
   > img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-bottom: $border-width-thin solid $color-border; background: $color-bg-light; }
 }
 .history-peak-placeholder { display: grid; width: 100%; aspect-ratio: 16 / 9; place-items: center; border-bottom: $border-width-thin solid $color-border; background: $color-bg-light; color: $color-text-muted; font-size: $font-xs; }
@@ -258,7 +258,7 @@
 
 .history-page-message { padding: $space-xl; border-radius: $radius-xl; background: white; color: $color-text-muted; text-align: center; }
 .history-page-message.error,
-.history-inline-error { padding: $space-sm $space-md; border-radius: $radius-md; background: $color-error-bg; color: $color-error-dark; }
+.history-inline-error { padding: $space-sm $space-md; border: $border-width-thin solid $color-error-border; border-radius: $radius-md; background: $color-error-bg; color: $color-error; }
 .history-empty,
 .history-loading { padding: $space-md 0; color: $color-text-muted; text-align: center; font-size: $font-sm; }
 .load-more { align-self: center; }

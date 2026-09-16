@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { type Stamp } from '@comet/shared';
 import { authHeaders, loadRuntimeConfig } from '../../auth';
-import { TabbedSectionBase, type Tab } from '../common/TabbedSectionBase';
+import { SectionBase } from '../common/SectionBase';
+import { GearIcon } from '../../assets/icons/GearIcon';
 import { UploadDialog } from './UploadDialog';
-import { EmojiTab } from './EmojiTab';
-import { CustomStampTab } from './CustomStampTab';
+import { ManageDialog } from './ManageDialog';
 import './style.scss';
+
+// emoji-picker-react を含むモジュールは重いので、初期表示後に遅延ロードする
+const UnifiedPicker = lazy(() => import('./UnifiedPicker'));
 
 interface StampPickerProps {
   onSelectStamp: (stamp: Stamp) => void;
+  /** WebSocket で送信できない間は、HTTP API の管理操作を残してピッカーだけ無効にする */
   disabled?: boolean;
 }
 
@@ -29,18 +33,17 @@ async function errorMessage(response: Response, fallback: string) {
   return data.error || fallback;
 }
 
+// スタンプの追加・管理はHTTP APIで完結するため、WebSocketの接続状態には依存させない
 export function StampPicker({
   onSelectStamp,
   disabled = false,
 }: StampPickerProps) {
   const [customStamps, setCustomStamps] = useState<Stamp[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [customSearchQuery, setCustomSearchQuery] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showManageDialog, setShowManageDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const fetchCustomStamps = async (signal?: AbortSignal) => {
-    setLoading(true);
     try {
       const response = await fetch(await stampApiUrl('/stamps'), {
         signal,
@@ -58,8 +61,6 @@ export function StampPicker({
         return;
       }
       console.error('Failed to fetch custom stamps:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -161,38 +162,62 @@ export function StampPicker({
     }
   };
 
-  const tabs: Tab[] = [
-    {
-      id: 'emoji',
-      label: '絵文字',
-      content: <EmojiTab onSelectStamp={onSelectStamp} />,
-    },
-    {
-      id: 'custom',
-      label: 'カスタム',
-      content: (
-        <CustomStampTab
-          stamps={customStamps}
-          loading={loading}
-          searchQuery={customSearchQuery}
-          onSearchChange={setCustomSearchQuery}
-          onSelectStamp={onSelectStamp}
-          onDeleteStamp={handleDeleteStamp}
-          onOpenUploadDialog={() => setShowUploadDialog(true)}
-          disabled={disabled}
-        />
-      ),
-    },
-  ];
+  const openUploadDialog = () => {
+    setShowManageDialog(false);
+    setShowUploadDialog(true);
+  };
 
   return (
     <>
-      <TabbedSectionBase
-        title="スタンプ"
-        tabs={tabs}
-        defaultTab="emoji"
-        disabled={disabled}
+      <SectionBase
+        title={
+          <div className="stamp-section-title">
+            <h3>スタンプ</h3>
+            <div className="stamp-section-actions">
+              <button
+                type="button"
+                className="stamp-header-button"
+                onClick={openUploadDialog}
+                title="カスタムスタンプを追加"
+              >
+                ＋ 追加
+              </button>
+              <button
+                type="button"
+                className="stamp-header-button stamp-header-icon-button"
+                onClick={() => setShowManageDialog(true)}
+                aria-label="カスタムスタンプを管理"
+                title="カスタムスタンプを管理"
+              >
+                <GearIcon />
+              </button>
+            </div>
+          </div>
+        }
         className="stamp-picker"
+      >
+        <fieldset
+          className="emoji-picker-wrapper emoji-picker-fieldset"
+          disabled={disabled}
+          aria-label="送信するスタンプを選ぶ"
+        >
+          <Suspense
+            fallback={<div className="emoji-picker-loading">読み込み中...</div>}
+          >
+            <UnifiedPicker
+              customStamps={customStamps}
+              onSelectStamp={onSelectStamp}
+            />
+          </Suspense>
+        </fieldset>
+      </SectionBase>
+
+      <ManageDialog
+        isOpen={showManageDialog}
+        stamps={customStamps}
+        onClose={() => setShowManageDialog(false)}
+        onDeleteStamp={handleDeleteStamp}
+        onOpenUploadDialog={openUploadDialog}
       />
 
       <UploadDialog
