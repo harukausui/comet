@@ -615,6 +615,17 @@
   }
 }
 
+.emoji-picker-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  &:disabled {
+    opacity: $opacity-disabled;
+  }
+}
+
 .emoji-picker-loading {
   padding: $space-xl $space-md;
   color: $color-text-muted;
