@@ -37,6 +37,13 @@ describe('CommentForm', () => {
     );
   });
 
+  it('shows guidance before a comment is entered', () => {
+    render(<CommentForm onSubmit={vi.fn()} />);
+    expect(
+      screen.getByText('コメントを入力するとプレビューできます')
+    ).toBeTruthy();
+  });
+
   it('does not save style settings unless the persist toggle is on', () => {
     render(<CommentForm onSubmit={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '大' }));

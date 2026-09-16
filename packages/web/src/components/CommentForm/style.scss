@@ -19,23 +19,19 @@
   }
 
   .comment-preview-track {
+    display: flex;
     position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    transform: translateY(-50%);
-    animation-name: comment-preview-scroll;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
+    align-items: center;
+    justify-content: center;
+    inset: 0;
     white-space: nowrap;
-    will-change: transform;
   }
 
   .comment-preview-text {
     display: inline-block;
     font-weight: bold;
-    font-family: 'Arial', 'Hiragino Sans', 'Meiryo', sans-serif;
     line-height: 1;
+    font-family: 'Arial', 'Hiragino Sans', 'Meiryo', sans-serif;
   }
 
   .comment-preview-note {
@@ -340,16 +336,6 @@
   }
 }
 
-@keyframes comment-preview-scroll {
-  from {
-    transform: translate(100%, -50%);
-  }
-
-  to {
-    transform: translate(-100%, -50%);
-  }
-}
-
 @keyframes comment-preview-blink {
   0%,
   100% {
@@ -416,16 +402,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .comment-form {
-    .comment-preview-track,
     .comment-preview-text {
       animation: none;
-    }
-
-    .comment-preview-track {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform: translateY(-50%);
     }
   }
 }
