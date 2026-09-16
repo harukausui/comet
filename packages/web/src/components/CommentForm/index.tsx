@@ -302,7 +302,7 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
           >
             {isDanmakuMode ? (
               <p className="comment-preview-note">
-                盛り上げモードでは、見た目が送信時にランダムで決まります
+                コメントを一気に送信して、画面を盛り上げます！
               </p>
             ) : !previewText ? (
               <p className="comment-preview-note">
