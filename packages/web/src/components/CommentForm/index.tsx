@@ -7,6 +7,7 @@ import type {
 } from '@comet/shared';
 import {
   COMMENT_COLORS,
+  COMMENT_SIZES,
   COMMENT_SIZE_OPTIONS,
   SPEED_OPTIONS,
   SPEED_VALUES,
@@ -34,6 +35,12 @@ interface CommentFormProps {
 // 連投による荒れ・過負荷を防ぐための送信クールダウン
 const COMMENT_COOLDOWN_MS = 2000;
 const DANMAKU_COOLDOWN_MS = 10000;
+
+const PREVIEW_DURATION_SECONDS: Record<SpeedOption, number> = {
+  slow: 4,
+  normal: 3,
+  fast: 2,
+};
 
 export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
   // 保存済みの職人設定があれば初期値として復元し、「設定を保存する」もONで始める
@@ -162,9 +169,43 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
     }
   };
 
+  const previewShadowColor = color === COMMENT_COLORS.WHITE ? '#000' : '#FFF';
+  const previewText = content.trim() || 'コメントの見え方をプレビュー';
+
   return (
     <SectionBase title="コメントフォーム" className="comment-form-section">
       <form className="comment-form" onSubmit={handleSubmit}>
+        <div
+          className="comment-preview"
+          aria-label="コメントのプレビュー"
+          aria-live="polite"
+        >
+          {isDanmakuMode ? (
+            <p className="comment-preview-note">
+              盛り上げモードでは、色・サイズ・速度・アニメーションが送信時にランダムで決まります
+            </p>
+          ) : (
+            <span
+              key={`${previewText}-${color}-${size}-${speedOption}-${animation}`}
+              className="comment-preview-track"
+              style={{
+                animationDuration: `${PREVIEW_DURATION_SECONDS[speedOption]}s`,
+              }}
+            >
+              <span
+                className={`comment-preview-text comment-preview-animation-${animation}`}
+                style={{
+                  color,
+                  fontSize: `${COMMENT_SIZES[size]}px`,
+                  textShadow: `-1px -1px 0 ${previewShadowColor}, 1px -1px 0 ${previewShadowColor}, -1px 1px 0 ${previewShadowColor}, 1px 1px 0 ${previewShadowColor}, 0 0 4px ${previewShadowColor}`,
+                }}
+              >
+                {previewText}
+              </span>
+            </span>
+          )}
+        </div>
+
         {/* 入力してすぐ送れるように、入力欄と送信ボタンを同じ行に置く */}
         <div className="form-group comment-input-row">
           <input
