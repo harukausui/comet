@@ -5,7 +5,7 @@
 
   .comment-preview {
     position: relative;
-    height: 150px;
+    height: 100px;
     overflow: hidden;
     border: $border-width-thin solid $color-border;
     border-radius: $radius-md;
@@ -14,7 +14,7 @@
       #101522;
 
     @media (max-width: $breakpoint-sm) {
-      height: 130px;
+      height: 88px;
     }
   }
 

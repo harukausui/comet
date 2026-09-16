@@ -35,6 +35,7 @@ interface CommentFormProps {
 // 連投による荒れ・過負荷を防ぐための送信クールダウン
 const COMMENT_COOLDOWN_MS = 2000;
 const DANMAKU_COOLDOWN_MS = 10000;
+const PREVIEW_SIZE_SCALE = 0.65;
 
 export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
   // 保存済みの職人設定があれば初期値として復元し、「設定を保存する」もONで始める
@@ -191,7 +192,7 @@ export function CommentForm({ onSubmit, disabled = false }: CommentFormProps) {
                 className={`comment-preview-text comment-preview-animation-${animation}`}
                 style={{
                   color,
-                  fontSize: `${COMMENT_SIZES[size]}px`,
+                  fontSize: `${COMMENT_SIZES[size] * PREVIEW_SIZE_SCALE}px`,
                   textShadow: `-1px -1px 0 ${previewShadowColor}, 1px -1px 0 ${previewShadowColor}, -1px 1px 0 ${previewShadowColor}, 1px 1px 0 ${previewShadowColor}, 0 0 4px ${previewShadowColor}`,
                 }}
               >

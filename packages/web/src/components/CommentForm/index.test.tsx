@@ -31,7 +31,7 @@ describe('CommentForm', () => {
     const text = preview.querySelector<HTMLElement>('.comment-preview-text');
     expect(text?.textContent).toBe('プレビューするコメント');
     expect(text?.style.color).toBe('rgb(255, 0, 0)');
-    expect(text?.style.fontSize).toBe('120px');
+    expect(text?.style.fontSize).toBe('78px');
     expect(text?.classList.contains('comment-preview-animation-bounce')).toBe(
       true
     );
